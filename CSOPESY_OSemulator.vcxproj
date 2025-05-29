@@ -124,10 +124,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConsoleManager.cpp" />
     <ClCompile Include="MainLoop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AConsole.h" />
+    <ClInclude Include="ConsoleManager.h" />
     <ClInclude Include="MainConsole.h" />
     <ClInclude Include="ProcessConsole.h" />
   </ItemGroup>
