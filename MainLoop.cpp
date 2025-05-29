@@ -1,8 +1,13 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <cctype>
 #include <limits>
 
+// Temp w/o Console Manager
+#include "AConsole.h"
+#include "MainConsole.h"
+#include "ProcessConsole.h"
 
 void displayHeader() {
     std::cout << "  ___  ____   __  ____  ____  ____  _  _ " << std::endl;
@@ -20,7 +25,7 @@ void clearScreen() {
     system("clear");
 #endif
 
-    displayHeader();
+    // displayHeader();
 }
 
 std::string toLower(const std::string& str) {
@@ -31,12 +36,28 @@ std::string toLower(const std::string& str) {
     return result;
 }
 
+void tokenizeString(std::string& input, std::string tokenArray[], int index = 0) {
+    std::istringstream stream(input);
+    std::string token;
+    while (std::getline(stream, token, ' ')) {
+        tokenArray[index++] = token;
+    }
+}
+
 void handleInitialize() {
     std::cout << "initialize command recognized. Doing something." << std::endl;
 }
 
-void handleScreen() {
-    std::cout << "screen command recognized. Doing something." << std::endl;
+void handleScreen(std::string commandTokens[], ProcessConsole* proc) {
+    if (commandTokens[1] == "" || !(commandTokens[1].compare("-r") == 0) && !(commandTokens[1].compare("-s") == 0))
+    {
+        std::cout << "Syntax for screen command is incorrect. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+        return;
+    }
+
+    clearScreen();
+    proc->setProcessName(commandTokens[2]);
+    proc->display();
 }
 
 void handleSchedulerTest() {
@@ -53,6 +74,12 @@ void handleReportUtil() {
 
 int main() {
     clearScreen();
+    // Temporary console pointers
+    Console* mainConsole = new MainConsole();
+    Console* processConsole = new ProcessConsole();
+
+
+    mainConsole->display();
 
     std::string command;
     bool running = true;
@@ -61,7 +88,9 @@ int main() {
         std::cout << "Enter a command: ";
         std::getline(std::cin, command);
 
-        std::string lowerCommand = toLower(command);
+        std::string commandTokens[10];
+        tokenizeString(command, commandTokens);
+        std::string lowerCommand = commandTokens[0];
 
         if (lowerCommand == "exit") {
             std::cout << "exit command recognized. Exiting application." << std::endl;
@@ -69,12 +98,14 @@ int main() {
         }
         else if (lowerCommand == "clear") {
             clearScreen();
+            mainConsole->display();
         }
         else if (lowerCommand == "initialize") {
             handleInitialize();
         }
         else if (lowerCommand == "screen") {
-            handleScreen();
+            std::unique_ptr<ProcessConsole> ptr = std::make_unique<ProcessConsole>();
+             handleScreen(commandTokens, ptr.get());
         }
         else if (lowerCommand == "scheduler-test") {
             handleSchedulerTest();
