@@ -18,10 +18,5 @@ public:
 	}
 
 	void process() override {
-		display(); // TEMPORARY SOLUTION
-		
-		String command;
-		std::cin >> command;
-		// ConsoleManager::getInstance()->processCommand(command, this->name);
 	}
 };

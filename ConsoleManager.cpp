@@ -23,19 +23,31 @@ void ConsoleManager::showMainConsole() {
 
 // Open a new or existing process screen
 void ConsoleManager::openScreen(const std::string& name, bool resume) {
-  /* 
-    i think in this part we have to check if the screen name exist, so resume siya if true
-	otherwise, pag di siya nag eexist, we can create a new ProcessConsole instance then set siguro yung process name after
-    then i think need rin siya i store sa consoles. i honestly dont know what more we need, but yeahh this is basically
-    the main part of the assignment. sorry if i made this without ur knowledge huhuhuhu </3
-        -gab with annabelle pfp in discord <3
-  if ()) {
+    // Check if the screen name exists in our consoles map
+    auto it = consoles.find(name);
+    
+    if (it != consoles.end() && resume) {
+        // Screen exists and we want to resume it
+        currentConsole = it->second;
+        currentConsole->display();
+    }
+    else if (it == consoles.end()) {
+        // Screen doesn't exist
+        auto newProcessConsole = std::make_shared<ProcessConsole>();
+        newProcessConsole->setProcessName(name);
         
+        
+        consoles[name] = newProcessConsole;
+        
+      
+        currentConsole = newProcessConsole;
+        currentConsole->display();
     }
     else {
-        
+        // Screen exists but resume is false 
+        currentConsole = it->second;
+        currentConsole->display();
     }
-    */
 }
 
 // Check if currently on the main console

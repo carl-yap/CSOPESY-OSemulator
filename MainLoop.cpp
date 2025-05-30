@@ -4,19 +4,7 @@
 #include <cctype>
 #include <limits>
 
-// Temp w/o Console Manager
-#include "AConsole.h"
-#include "MainConsole.h"
-#include "ProcessConsole.h"
-
-void displayHeader() {
-    std::cout << "  ___  ____   __  ____  ____  ____  _  _ " << std::endl;
-    std::cout << " / __)/ ___) /  \\(  _ \\(  __)/ ___)( \\/ )" << std::endl;
-    std::cout << "( (__ \\___ \\(  O )) __/ ) _) \\___ \\ )  / " << std::endl;
-    std::cout << " \\___)(____/ \\__/(__)  (____)(____/(__/  " << std::endl;
-    std::cout << "Hello, Welcome to CSOPESPY commandline!" << std::endl;
-    std::cout << "Type 'exit' to quit, 'clear' to clear the screen" << std::endl;
-}
+#include "ConsoleManager.h"
 
 void clearScreen() {
 #ifdef _WIN32
@@ -24,8 +12,6 @@ void clearScreen() {
 #else
     system("clear");
 #endif
-
-    // displayHeader();
 }
 
 std::string toLower(const std::string& str) {
@@ -36,10 +22,17 @@ std::string toLower(const std::string& str) {
     return result;
 }
 
-void tokenizeString(std::string& input, std::string tokenArray[], int index = 0) {
+void tokenizeString(const std::string& input, std::string tokenArray[], int maxTokens = 10) {
     std::istringstream stream(input);
     std::string token;
-    while (std::getline(stream, token, ' ')) {
+    int index = 0;
+
+    // Initialize array
+    for (int i = 0; i < maxTokens; i++) {
+        tokenArray[i] = "";
+    }
+
+    while (std::getline(stream, token, ' ') && index < maxTokens) {
         tokenArray[index++] = token;
     }
 }
@@ -48,16 +41,21 @@ void handleInitialize() {
     std::cout << "initialize command recognized. Doing something." << std::endl;
 }
 
-void handleScreen(std::string commandTokens[], ProcessConsole* proc) {
-    if (commandTokens[1] == "" || !(commandTokens[1].compare("-r") == 0) && !(commandTokens[1].compare("-s") == 0))
-    {
+void handleScreen(const std::string commandTokens[]) {
+    if (commandTokens[1] == "" || (commandTokens[1] != "-r" && commandTokens[1] != "-s")) {
         std::cout << "Syntax for screen command is incorrect. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
         return;
     }
 
+    if (commandTokens[2] == "") {
+        std::cout << "Process name is required. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+        return;
+    }
+
     clearScreen();
-    proc->setProcessName(commandTokens[2]);
-    proc->display();
+
+    bool resume = (commandTokens[1] == "-r");
+    ConsoleManager::getInstance().openScreen(commandTokens[2], resume);
 }
 
 void handleSchedulerTest() {
@@ -74,12 +72,9 @@ void handleReportUtil() {
 
 int main() {
     clearScreen();
-    // Temporary console pointers
-    Console* mainConsole = new MainConsole();
-    Console* processConsole = new ProcessConsole();
 
-
-    mainConsole->display();
+    ConsoleManager::getInstance().init();
+    ConsoleManager::getInstance().showMainConsole();
 
     std::string command;
     bool running = true;
@@ -90,22 +85,34 @@ int main() {
 
         std::string commandTokens[10];
         tokenizeString(command, commandTokens);
-        std::string lowerCommand = commandTokens[0];
+        std::string lowerCommand = toLower(commandTokens[0]);
 
         if (lowerCommand == "exit") {
-            std::cout << "exit command recognized. Exiting application." << std::endl;
-            running = false;
+            if (ConsoleManager::getInstance().isMainConsole()) {
+                std::cout << "exit command recognized. Exiting application." << std::endl;
+                running = false;
+            }
+            else {
+               
+                clearScreen();
+                ConsoleManager::getInstance().showMainConsole();
+            }
         }
         else if (lowerCommand == "clear") {
             clearScreen();
-            mainConsole->display();
+            if (ConsoleManager::getInstance().isMainConsole()) {
+                ConsoleManager::getInstance().showMainConsole();
+            }
+            else {
+                // Redisplay current console
+                ConsoleManager::getInstance().getCurrentConsole()->display();
+            }
         }
         else if (lowerCommand == "initialize") {
             handleInitialize();
         }
         else if (lowerCommand == "screen") {
-            std::unique_ptr<ProcessConsole> ptr = std::make_unique<ProcessConsole>();
-             handleScreen(commandTokens, ptr.get());
+            handleScreen(commandTokens);
         }
         else if (lowerCommand == "scheduler-test") {
             handleSchedulerTest();

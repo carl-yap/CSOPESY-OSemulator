@@ -17,11 +17,12 @@ public:
 
     bool isMainConsole() const;
 
+    std::shared_ptr<Console> getCurrentConsole() const { return currentConsole; }
+
 private:
     ConsoleManager();  // Private constructor (singleton)
     
     std::shared_ptr<Console> currentConsole;
     std::shared_ptr<MainConsole> mainConsole;
     std::unordered_map<std::string, std::shared_ptr<ProcessConsole>> consoles; // Name → ProcessConsole
-
 };
