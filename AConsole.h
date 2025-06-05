@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <string>
 
 class Console {
@@ -17,7 +18,7 @@ public:
 
 	String getName() const { return this->name; }
 
-	// friend class ConsoleManager;
+	friend class ConsoleManager;
 
 protected:
 	String name;

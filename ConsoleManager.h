@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
-#include "AConsole.h"
 #include "MainConsole.h"
 #include "ProcessConsole.h"
 
@@ -15,9 +14,14 @@ public:
     void showMainConsole();  // Return to main menu
     void openScreen(const std::string& name, bool resume);  // Open/resume process screen
 
+    void setRunStatus(bool running);
+    bool isRunning();
+
     bool isMainConsole() const;
 
     std::shared_ptr<Console> getCurrentConsole() const { return currentConsole; }
+
+    void clearScreen();
 
 private:
     ConsoleManager();  // Private constructor (singleton)
@@ -25,4 +29,6 @@ private:
     std::shared_ptr<Console> currentConsole;
     std::shared_ptr<MainConsole> mainConsole;
     std::unordered_map<std::string, std::shared_ptr<ProcessConsole>> consoles; // Name → ProcessConsole
+
+    bool running = false;
 };
