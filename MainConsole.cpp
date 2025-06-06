@@ -49,8 +49,11 @@ void MainConsole::process() {
         else if (lowerCommand == "report-util") {
             handleReportUtil();
         }
+        else if (lowerCommand == "marquee") {
+            handleMarquee();
+        }
         else {
-            std::cout << "Unknown command. Available commands: initialize, screen, scheduler-test, scheduler-stop, report-util, clear, exit" << std::endl;
+            std::cout << "Unknown command. Available commands: initialize, marquee, screen, scheduler-test, scheduler-stop, report-util, clear, exit" << std::endl;
         }
     }
     ConsoleManager::getInstance().clearScreen();
@@ -111,5 +114,5 @@ void MainConsole::handleReportUtil() {
 }
 
 void MainConsole::handleMarquee() {
-	return; // Placeholder for future marquee functionality
+    ConsoleManager::getInstance().openMarquee();
 }

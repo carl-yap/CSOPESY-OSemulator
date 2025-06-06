@@ -5,6 +5,7 @@
 #include <string>
 #include "MainConsole.h"
 #include "ProcessConsole.h"
+#include "MarqueeConsole.h"
 
 class ConsoleManager {
 public:
@@ -13,6 +14,7 @@ public:
     void init();  // Initialize main console
     void showMainConsole();  // Return to main menu
     void openScreen(const std::string& name, bool resume);  // Open/resume process screen
+    void openMarquee(); // startup the marquee console
 
     void setRunStatus(bool running);
     bool isRunning();

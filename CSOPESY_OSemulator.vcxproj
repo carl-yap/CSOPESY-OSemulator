@@ -127,12 +127,15 @@
     <ClCompile Include="ConsoleManager.cpp" />
     <ClCompile Include="MainConsole.cpp" />
     <ClCompile Include="MainLoop.cpp" />
+    <ClCompile Include="MarqueeConsole.cpp" />
+    <ClCompile Include="MarqueeWorkerThread.cpp" />
     <ClCompile Include="ProcessConsole.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AConsole.h" />
     <ClInclude Include="ConsoleManager.h" />
     <ClInclude Include="MainConsole.h" />
+    <ClInclude Include="MarqueeConsole.h" />
     <ClInclude Include="MarqueeWorkerThread.h" />
     <ClInclude Include="ProcessConsole.h" />
   </ItemGroup>

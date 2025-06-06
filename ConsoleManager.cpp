@@ -62,6 +62,11 @@ void ConsoleManager::openScreen(const std::string& name, bool resume) {
     }
 }
 
+void ConsoleManager::openMarquee() {
+    clearScreen();
+    currentConsole = std::make_unique<MarqueeConsole>();
+}
+
 // Check if currently on the main console
 bool ConsoleManager::isMainConsole() const {
     return currentConsole == mainConsole;
