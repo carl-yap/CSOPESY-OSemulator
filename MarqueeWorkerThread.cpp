@@ -165,6 +165,11 @@ void MarqueeWorkerThread::kbpollThread() {
 						this->quitFlag.store(true);
 						break;
 					}
+					if (command == "clear") {
+						std::lock_guard<std::mutex> lock(this->commHistMutex);
+						this->commandHistory.clear();
+						continue;
+					}
 					{
 						std::lock_guard<std::mutex> lock(this->commHistMutex);
 						this->commandHistory.push_front(command);
