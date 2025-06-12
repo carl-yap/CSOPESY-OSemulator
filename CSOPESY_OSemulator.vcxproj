@@ -131,6 +131,7 @@
     <ClCompile Include="MarqueeConsole.cpp" />
     <ClCompile Include="MarqueeWorkerThread.cpp" />
     <ClCompile Include="ProcessConsole.cpp" />
+    <ClCompile Include="SymbolTable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AConsole.h" />
@@ -140,6 +141,7 @@
     <ClInclude Include="MarqueeConsole.h" />
     <ClInclude Include="MarqueeWorkerThread.h" />
     <ClInclude Include="ProcessConsole.h" />
+    <ClInclude Include="SymbolTable.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

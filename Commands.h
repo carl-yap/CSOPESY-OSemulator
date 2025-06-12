@@ -57,7 +57,7 @@ class AddCommand : public ICommand {
 private:
 	String var1;
 	String var2;
-	uint16_t sum;
+	uint16_t sum; 
 };
 
 class SubtractCommand : public ICommand {
