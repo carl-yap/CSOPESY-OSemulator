@@ -21,8 +21,7 @@ void MainConsole::process() {
         std::cout << "Enter a command: ";
         std::getline(std::cin, command);
 
-        std::string commandTokens[10];
-        tokenizeString(command, commandTokens);
+        std::vector<std::string> commandTokens = tokenizeString(command);
         std::string lowerCommand = toLower(commandTokens[0]);
 
         if (lowerCommand == "exit") {
@@ -67,38 +66,41 @@ Console::String MainConsole::toLower(const String& str) {
     return result;
 }
 
-void MainConsole::tokenizeString(const String& input, String tokenArray[], int maxTokens) {
+std::vector<std::string> MainConsole::tokenizeString(const String& input) {
     std::istringstream stream(input);
-    std::string token;
-    int index = 0;
-
-    // Initialize array
-    for (int i = 0; i < maxTokens; i++) {
-        tokenArray[i] = "";
-    }
-
-    while (std::getline(stream, token, ' ') && index < maxTokens) {
-        tokenArray[index++] = token;
-    }
+    return {std::istream_iterator<String>(stream), std::istream_iterator<String>()};
 }
 
 void MainConsole::handleInitialize() {
     std::cout << "initialize command recognized. Doing something." << std::endl;
 }
 
-void MainConsole::handleScreen(const String commandTokens[]) {
-    if (commandTokens[1] == "" || (commandTokens[1] != "-r" && commandTokens[1] != "-s")) {
-        std::cout << "Syntax for screen command is incorrect. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
-        return;
-    }
+void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
+    bool resume = false;
 
-    if (commandTokens[2] == "") {
-        std::cout << "Process name is required. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+    switch (commandTokens.size()) {
+    case 1:
+        std::cout << "screen command recognized. No additional parameters provided." << std::endl;
+		break;
+    case 2:
+        if (commandTokens[1] != "-ls") {
+            std::cout << "Process name is required. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+            break;
+		}
+        ConsoleManager::getInstance().showScreenList();
         return;
+    case 3:
+        if (commandTokens[1] != "-r" && commandTokens[1] != "-s") {
+            std::cout << "Syntax for screen command is incorrect. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+            break;
+        }
+        resume = (commandTokens[1] == "-r");
+        ConsoleManager::getInstance().openScreen(commandTokens[2], resume);
+        return;
+    default:
+        std::cout << "Too many parameters provided. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+		return;
     }
-
-    bool resume = (commandTokens[1] == "-r");
-    ConsoleManager::getInstance().openScreen(commandTokens[2], resume);
 }
 
 void MainConsole::handleSchedulerTest() {

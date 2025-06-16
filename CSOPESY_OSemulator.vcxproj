@@ -124,8 +124,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AScheduler.cpp" />
     <ClCompile Include="Commands.cpp" />
     <ClCompile Include="ConsoleManager.cpp" />
+    <ClCompile Include="FCFSScheduler.cpp" />
     <ClCompile Include="MainConsole.cpp" />
     <ClCompile Include="MainLoop.cpp" />
     <ClCompile Include="MarqueeConsole.cpp" />
@@ -137,10 +139,12 @@
     <ClInclude Include="AConsole.h" />
     <ClInclude Include="Commands.h" />
     <ClInclude Include="ConsoleManager.h" />
+    <ClInclude Include="FCFSScheduler.h" />
     <ClInclude Include="MainConsole.h" />
     <ClInclude Include="MarqueeConsole.h" />
     <ClInclude Include="MarqueeWorkerThread.h" />
     <ClInclude Include="ProcessConsole.h" />
+    <ClInclude Include="AScheduler.h" />
     <ClInclude Include="SymbolTable.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

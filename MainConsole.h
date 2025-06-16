@@ -1,5 +1,8 @@
 #pragma once
 
+#include <sstream>
+#include <vector>
+#include <iterator>
 #include "AConsole.h"
 
 class MainConsole : public Console {
@@ -13,10 +16,10 @@ public:
 private:
 	String  command;
     String  toLower(const String& str);
-    void    tokenizeString(const String& input, String tokenArray[], int maxTokens=10);
+    std::vector<String> tokenizeString(const String& input);
     
     void handleInitialize();
-    void handleScreen(const String commandTokens[]);
+    void handleScreen(std::vector<String> commandTokens);
     void handleSchedulerTest();
     void handleSchedulerStop();
     void handleReportUtil();

@@ -9,12 +9,16 @@ ICommand::CommandType ICommand::getCommandType() {
 }
 
 void ICommand::execute() {
-	std::this_thread::sleep_for(std::chrono::milliseconds(10)); // arbitrary delay time
+	std::this_thread::sleep_for(std::chrono::milliseconds(100)); // arbitrary delay time
 }
 
 /* ===============PRINT COMMAND================== */
 PrintCommand::PrintCommand(int pid, String toPrint) : ICommand(pid, PRINT) {
 	this->toPrint = toPrint;
+}
+
+std::string PrintCommand::getOutput() const {
+	return this->toPrint;
 }
 
 void PrintCommand::execute() {

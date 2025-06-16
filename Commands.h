@@ -21,6 +21,7 @@ public:
 
 	ICommand(int pid, CommandType cmdType);
 	CommandType getCommandType();
+	virtual String getOutput() const = 0;
 	virtual void execute();
 
 protected:
@@ -32,6 +33,7 @@ protected:
 class PrintCommand : public ICommand {
 public:
 	PrintCommand(int pid, String toPrint);
+	String getOutput() const override;
 	void execute() override;
 
 private:

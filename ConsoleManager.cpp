@@ -15,12 +15,21 @@ void ConsoleManager::init() {
     mainConsole = std::make_shared<MainConsole>();
     currentConsole = mainConsole;
     currentConsole->display();
+
+    // start the scheduler
+    scheduler = new FCFSScheduler(4); // TODO: make this configurable
+    scheduler->schedulerStart();
+
     this->running = true;
 }
 
 // Show the main console screen
 void ConsoleManager::showMainConsole() {
     currentConsole = mainConsole;
+}
+
+void ConsoleManager::showScreenList() const {
+    scheduler->displayScreenList();
 }
 
 void ConsoleManager::setRunStatus(bool running) {
