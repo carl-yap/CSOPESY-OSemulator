@@ -4,7 +4,6 @@
 #include <vector>
 #include <iterator>
 #include "AConsole.h"
-#include "FCFSScheduler.h"
 
 class MainConsole : public Console {
 public:
@@ -18,8 +17,6 @@ private:
 	String  command;
     String  toLower(const String& str);
     std::vector<String> tokenizeString(const String& input);
-
-    std::shared_ptr<FCFSScheduler> scheduler;
     
     void handleInitialize();
     void handleScreen(std::vector<String> commandTokens);

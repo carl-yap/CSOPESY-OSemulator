@@ -25,7 +25,6 @@ struct Process {
 	int currInst{ 0 };
 	int instructionsRemaining;
 	std::string logFilename;
-	std::chrono::system_clock::time_point startTime;
 
 	Process(int id, const std::string& n)
 		: pid(id), name(n), instructionsRemaining(100) {
@@ -35,7 +34,6 @@ struct Process {
 		}
 
 		logFilename = "processLog_" + name + ".txt";
-		startTime = std::chrono::system_clock::now();
 	}
 
 	std::string executeInstruction() {
@@ -73,9 +71,6 @@ protected:
 	void writeToLog(const std::string& filename, const std::string& message);
 	void initializeLog(const Process& process);
 
-	std::thread schedulerThreadHandle;
-	std::vector<std::thread> cpuThreads;
-
 public:
 	Scheduler(int cores) : numCores(cores) {
 		// initialize vectors based on the number of cores
@@ -104,8 +99,6 @@ public:
 	virtual void addProcess(const Process& process) = 0;
 	virtual void schedulerThread() = 0; // 1 thread
 	virtual void cpuCoreThread(int coreID) = 0; // {numCores} threads
-	virtual void start() = 0;
-	virtual void stop() = 0;
 
 	void displayScreenList() const;
 	void schedulerStart();

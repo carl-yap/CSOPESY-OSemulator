@@ -1,4 +1,4 @@
-#include "AScheduler.h"   
+#include "AScheduler.h"
 
 std::string Scheduler::getTimestamp() {
 	char output[50];
@@ -47,51 +47,20 @@ void Scheduler::displayScreenList() const {
 
 	std::cout << "CPU utilization: " << cpuUtil << "%" << std::endl;
 	std::cout << "Cores used: " << activeCPUs << std::endl;
-	std::cout << "Cores available: " << (numCores - activeCPUs) << std::endl;
+	std::cout << "Cores available: " << numCores - activeCPUs << std::endl;
 	std::cout << std::endl;
 
 	std::cout << "--------------------------------" << std::endl;
-	std::cout << "Running processes:\n";
-	std::cout << std::left
-		<< std::setw(16) << "Name"
-		<< std::setw(10) << "Core"
-		<< std::setw(14) << "Progress"
-		<< std::setw(12) << "StartTime"
-		<< "\n";
-
+	std::cout << "Running processes:" << std::endl;
 	for (int i = 0; i < numCores; ++i) {
 		Process* p = currentProcess[i];
 
 		// TODO: Add timestamps when Process class is ready
-		if (p == nullptr) { continue; }
-		else if (p != nullptr) {
-			std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->startTime);
-			struct tm localTime;
-
-			if (localtime_s(&localTime, &start_time_t) == 0) {
-				std::ostringstream timeStream;
-				timeStream << std::put_time(&localTime, "%m/%d/%Y %I:%M:%S %p");
-
-				std::cout << std::left << std::setw(12) << p->name
-					<< "Core: " << i << "  "
-					<< std::setw(5) << "\t" << p->currInst << " / " << p->instructionsRemaining
-					<< "\t" << timeStream.str()
-					<< std::endl;
-			}
-			else {
-				std::cout << std::left << std::setw(12) << p->name
-					<< "Core: " << i << "  "
-					<< std::setw(5) << p->currInst << " / " << p->instructionsRemaining
-					<< "[Error getting time]"
-					<< std::endl;
-			}
+		if (p != nullptr) {
+			std::cout << p->name << "\tCore: " << i << "\t"
+				<< p->currInst << " / " << p->instructionsRemaining << std::endl;
 		}
 	}
-
-	// Track which finished processes are scheduler test vs system
-	std::vector<Process> systemFinished;
-	std::vector<Process> testFinished;
-
 	std::cout << std::endl;
 
 	std::cout << "Finished processes:" << std::endl;
@@ -102,18 +71,6 @@ void Scheduler::displayScreenList() const {
 				<< p.currInst << " / " << p.instructionsRemaining << std::endl;
 		}
     }
-
-	std::cout << "\nFinished processes (Scheduler Test):\n";
-	{
-		std::lock_guard<std::mutex> lock(finishedMutex);
-		for (const Process& p : finishedProcesses) {
-			if (p.name.rfind("P", 0) == 0) {
-				std::cout << std::left << std::setw(16) << p.name
-					<< std::setw(10) << "Finished" << "\t"
-					<< p.currInst << " / " << p.instructionsRemaining << "\n";
-			}
-		}
-	}
 	std::cout << "--------------------------------" << std::endl;
 	std::cout << std::endl;
 }
