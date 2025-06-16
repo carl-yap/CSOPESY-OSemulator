@@ -51,14 +51,40 @@ void Scheduler::displayScreenList() const {
 	std::cout << std::endl;
 
 	std::cout << "--------------------------------" << std::endl;
-	std::cout << "Running processes:" << std::endl;
+	std::cout << "Running processes:\n";
+	std::cout << std::left
+		<< std::setw(16) << "Name"
+		<< std::setw(10) << "Core"
+		<< std::setw(14) << "Progress"
+		<< std::setw(12) << "StartTime"
+		<< "\n";
+
 	for (int i = 0; i < numCores; ++i) {
 		Process* p = currentProcess[i];
 
 		// TODO: Add timestamps when Process class is ready
-		if (p != nullptr) {
-			std::cout << p->name << "\tCore: " << i << "\t"
-				<< p->currInst << " / " << p->instructionsRemaining << std::endl;
+		if (p == nullptr) { continue; }
+		else if (p != nullptr) {
+			std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->startTime);
+			struct tm localTime;
+
+			if (localtime_s(&localTime, &start_time_t) == 0) {
+				std::ostringstream timeStream;
+				timeStream << std::put_time(&localTime, "%m/%d/%Y %I:%M:%S %p");
+
+				std::cout << std::left << std::setw(12) << p->name
+					<< "Core: " << i << "  "
+					<< std::setw(5) << "\t" << p->currInst << " / " << p->instructionsRemaining
+					<< "\t" << timeStream.str()
+					<< std::endl;
+			}
+			else {
+				std::cout << std::left << std::setw(12) << p->name
+					<< "Core: " << i << "  "
+					<< std::setw(5) << p->currInst << " / " << p->instructionsRemaining
+					<< "[Error getting time]"
+					<< std::endl;
+			}
 		}
 	}
 	std::cout << std::endl;

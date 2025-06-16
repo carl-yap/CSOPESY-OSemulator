@@ -25,7 +25,7 @@ struct Process {
 	int currInst{ 0 };
 	int instructionsRemaining;
 	std::string logFilename;
-
+	std::chrono::system_clock::time_point startTime;
 	Process(int id, const std::string& n)
 		: pid(id), name(n), instructionsRemaining(100) {
 		for (int i = 0; i < instructionsRemaining; ++i) {
@@ -34,6 +34,7 @@ struct Process {
 		}
 
 		logFilename = "processLog_" + name + ".txt";
+		startTime = std::chrono::system_clock::now();
 	}
 
 	std::string executeInstruction() {
