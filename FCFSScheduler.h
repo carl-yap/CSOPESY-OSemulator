@@ -9,4 +9,6 @@ public:
 	void addProcess(const Process& process) override;
 	void schedulerThread() override;
 	void cpuCoreThread(int coreID) override;
+	void start() override;
+	void stop() override;
 };

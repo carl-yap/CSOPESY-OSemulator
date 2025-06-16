@@ -86,3 +86,36 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 		}
 	}
 }
+
+void FCFSScheduler::start() {
+	running.store(true);
+	completedProcesses.store(0);
+
+	for (int i = 0; i < numCores; ++i) {
+		coreBusy[i]->store(false);
+		currentProcess[i] = nullptr;
+	}
+
+	schedulerThreadHandle = std::thread(&FCFSScheduler::schedulerThread, this);
+	for (int i = 0; i < numCores; ++i) {
+		cpuThreads.emplace_back(&FCFSScheduler::cpuCoreThread, this, i);
+	}
+}
+
+void FCFSScheduler::stop() {
+	running.store(false);
+	cvScheduler.notify_all();
+	for (auto& cv : cvCores) {
+		cv.notify_all();
+	}
+
+	if (schedulerThreadHandle.joinable()) {
+		schedulerThreadHandle.join();
+	}
+
+	for (auto& t : cpuThreads) {
+		if (t.joinable()) {
+			t.join();
+		}
+	}
+}

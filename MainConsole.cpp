@@ -103,12 +103,42 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
     }
 }
 
-void MainConsole::handleSchedulerTest() {
-    std::cout << "scheduler-test command recognized. Doing something." << std::endl;
+std::vector<Process> generateTestProcesses(int count) {
+    std::vector<Process> processes;
+    for (int i = 0; i < count; ++i) {
+        processes.emplace_back(10 + i, "P" + std::to_string(i + 1));
+    }
+    return processes;
 }
 
+
+void MainConsole::handleSchedulerTest() {
+    if (!scheduler) {
+        scheduler = std::make_shared<FCFSScheduler>(4); // or your actual core count
+        scheduler->start();
+
+        auto testProcesses = generateTestProcesses(5);
+        for (const auto& p : testProcesses) {
+            scheduler->addProcess(p);
+        }
+
+        std::cout << "FCFS Scheduler started and processes submitted." << std::endl;
+    }
+    else {
+        std::cout << "Scheduler already running." << std::endl;
+    }
+}
+
+
 void MainConsole::handleSchedulerStop() {
-    std::cout << "scheduler-stop command recognized. Doing something." << std::endl;
+    if (scheduler) {
+        scheduler->stop();
+        scheduler.reset();
+        std::cout << "Scheduler stopped and cleaned up." << std::endl;
+    }
+    else {
+        std::cout << "No scheduler running." << std::endl;
+    }
 }
 
 void MainConsole::handleReportUtil() {
