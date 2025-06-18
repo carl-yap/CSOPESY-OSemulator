@@ -22,5 +22,6 @@ public:
 
 protected:
 	String name;
+	String command;
 };
 

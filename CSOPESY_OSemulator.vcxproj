@@ -132,6 +132,7 @@
     <ClCompile Include="MainLoop.cpp" />
     <ClCompile Include="MarqueeConsole.cpp" />
     <ClCompile Include="MarqueeWorkerThread.cpp" />
+    <ClCompile Include="Process.cpp" />
     <ClCompile Include="ProcessConsole.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
   </ItemGroup>
@@ -143,8 +144,10 @@
     <ClInclude Include="MainConsole.h" />
     <ClInclude Include="MarqueeConsole.h" />
     <ClInclude Include="MarqueeWorkerThread.h" />
+    <ClInclude Include="Process.h" />
     <ClInclude Include="ProcessConsole.h" />
     <ClInclude Include="AScheduler.h" />
+    <ClInclude Include="ProcessScheduler.h" />
     <ClInclude Include="SymbolTable.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

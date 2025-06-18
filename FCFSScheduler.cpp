@@ -1,6 +1,6 @@
 #include "FCFSScheduler.h"
 
-void FCFSScheduler::addProcess(const Process& process) {
+void FCFSScheduler::addProcess(std::shared_ptr<Process> process) {
 	std::lock_guard<std::mutex> lock(queueMutex);
 	readyQueue.push(process);
 	cvScheduler.notify_one(); // Notify the scheduler that a process was pushed to RQ
@@ -18,12 +18,12 @@ void FCFSScheduler::schedulerThread() {
 		// Assign the next process in the RQ to a CPU core
 		for (int core = 0; core < numCores && !readyQueue.empty(); ++core) {
 			if (!coreBusy[core].get()->load()) { // if the core is not busy
-				Process proc = readyQueue.front();
+				std::shared_ptr<Process> proc = readyQueue.front();
 				readyQueue.pop();
 
 				{
 					std::lock_guard<std::mutex> core_lock(coreMutexes[core]);
-					currentProcess[core] = new Process(proc);
+					currentProcess[core] = proc;
 					coreBusy[core].get()->store(true);
 				}
 
@@ -43,26 +43,31 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 			});
 
 		if (currentProcess[coreID] != nullptr) {
-			Process* proc = currentProcess[coreID];
+			std::shared_ptr<Process> proc = currentProcess[coreID];
+			proc->setState(Process::State::RUNNING);
+			proc->setStartTime(std::chrono::system_clock::now());
 
-			// Initialize process log file
-			initializeLog(*proc);
+			// OLD: Initialize process log file
+			// initializeLog(*proc);
 
 			lock.unlock(); // Unlock before processing to allow other cores to run
 
 			// Simulate process execution
-			for (int i = 0; i < proc->instructionsRemaining; ++i) {
-				std::string output = proc->executeInstruction();
+			for (int i = 0; i < proc->getCmdListSize(); ++i) {
+				proc->executeCurrentCommand();
+				proc->moveToNextLine();
 
-				// log the command execution
+				/* OLD BLOCK: log the command execution
 				std::string timestamp = getTimestamp();
 				std::stringstream logEntry;
 				logEntry << "(" << timestamp << ") Core: " << coreID
 					<< " \"" << output << "\"" << std::endl;
 				 writeToLog(proc->logFilename, logEntry.str());
+				*/
 			}
 
 			{ // safely add the process to the finished list
+				proc->setState(Process::State::TERMINATED);
 				std::lock_guard<std::mutex> finished_lock(finishedMutex);
 				finishedProcesses.emplace_back(*proc);
 			}
@@ -70,7 +75,6 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 			// completion + cleanup
 			lock.lock();
 
-			delete currentProcess[coreID]; // Free the process memory
 			currentProcess[coreID] = nullptr;
 			coreBusy[coreID].get()->store(false); 
 			completedProcesses++;

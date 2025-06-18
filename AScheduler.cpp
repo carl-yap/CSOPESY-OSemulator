@@ -14,6 +14,7 @@ std::string Scheduler::getTimestamp() {
 	}
 }
 
+/* =============OLD FUNCTIONS TO CREATE LOG FILES=================
 void Scheduler::writeToLog(const std::string& filename, const std::string& message) {
 	std::ofstream logFile(filename, std::ios_base::app);
 	if (logFile.is_open()) {
@@ -37,6 +38,7 @@ void Scheduler::initializeLog(const Process& process) {
 		std::cerr << "Failed to initialize log file: " << process.logFilename << std::endl;
 	}
 }
+*/
 
 void Scheduler::displayScreenList() const {
 	int activeCPUs = 0;
@@ -60,28 +62,28 @@ void Scheduler::displayScreenList() const {
 		<< "\n";
 
 	for (int i = 0; i < numCores; ++i) {
-		Process* p = currentProcess[i];
+		std::shared_ptr<Process> p = currentProcess[i];
 
 		// TODO: Add timestamps when Process class is ready
 		if (p == nullptr) { continue; }
 		else if (p != nullptr) {
-			std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->startTime);
+			std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->getStartTime());
 			struct tm localTime;
 
 			if (localtime_s(&localTime, &start_time_t) == 0) {
 				std::ostringstream timeStream;
 				timeStream << std::put_time(&localTime, "%m/%d/%Y %I:%M:%S %p");
 
-				std::cout << std::left << std::setw(12) << p->name
+				std::cout << std::left << std::setw(12) << p->getName()
 					<< "Core: " << i << "  "
-					<< std::setw(5) << "\t" << p->currInst << " / " << p->instructionsRemaining
+					<< std::setw(5) << "\t" << p->getCounter()
 					<< "\t" << timeStream.str()
 					<< std::endl;
 			}
 			else {
-				std::cout << std::left << std::setw(12) << p->name
+				std::cout << std::left << std::setw(12) << p->getName()
 					<< "Core: " << i << "  "
-					<< std::setw(5) << p->currInst << " / " << p->instructionsRemaining
+					<< std::setw(5) << p->getCounter()
 					<< "[Error getting time]"
 					<< std::endl;
 			}
@@ -93,8 +95,8 @@ void Scheduler::displayScreenList() const {
     {
         std::lock_guard<std::mutex> lock(finishedMutex);
 		for (Process p : finishedProcesses) {
-			std::cout << p.name << "\tFinished" << "\t"
-				<< p.currInst << " / " << p.instructionsRemaining << std::endl;
+			std::cout << p.getName() << "\tFinished" << "\t"
+				<< p.getCounter() << std::endl;
 		}
     }
 	std::cout << "--------------------------------" << std::endl;
@@ -115,7 +117,9 @@ void Scheduler::schedulerStart() {
 	// Fake process creation logic
 	for (int i = 0; i < TOTAL_PROCESSES; ++i) {
 		std::string processName = "Process_" + std::to_string(i + 1);
-		Process p(i + 1, processName);
+		std::shared_ptr<Process> p = std::make_shared<Process>(i + 1, processName, 100, 500);
+		p->setState(Process::State::READY);
+		this->processList[i] = p; // temp storage for ProcessConsole
 		addProcess(p);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}

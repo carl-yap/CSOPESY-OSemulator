@@ -76,6 +76,7 @@ private:
 class SleepCommand : public ICommand {
 public:
 	SleepCommand(int pid, int duration);
+	String getOutput() const override;
 	void execute() override;
 
 private:

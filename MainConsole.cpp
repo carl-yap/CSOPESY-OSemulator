@@ -1,5 +1,6 @@
 #include "MainConsole.h"
 #include "ConsoleManager.h"
+#include "ProcessScheduler.h"
 
 MainConsole::MainConsole() : Console("MAIN_CONSOLE") {
     this->command = "";
@@ -39,7 +40,7 @@ void MainConsole::process() {
         else if (lowerCommand == "screen") {
             handleScreen(commandTokens);
         }
-        else if (lowerCommand == "scheduler-test") {
+        else if (lowerCommand == "scheduler-start") {
             handleSchedulerTest();
         }
         else if (lowerCommand == "scheduler-stop") {
@@ -87,7 +88,7 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
             std::cout << "Process name is required. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
             break;
 		}
-        ConsoleManager::getInstance().showScreenList();
+        ProcessScheduler::getInstance().showScreenList();
         return;
     case 3:
         if (commandTokens[1] != "-r" && commandTokens[1] != "-s") {
@@ -104,7 +105,7 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
 }
 
 void MainConsole::handleSchedulerTest() {
-    std::cout << "scheduler-test command recognized. Doing something." << std::endl;
+    std::cout << "scheduler-start command recognized. Doing something." << std::endl;
 }
 
 void MainConsole::handleSchedulerStop() {

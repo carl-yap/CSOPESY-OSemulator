@@ -102,6 +102,10 @@ SleepCommand::SleepCommand(int pid, int duration) : ICommand(pid, SLEEP) {
 	this->duration = duration;
 }
 
+std::string SleepCommand::getOutput() const {
+	return "ZZzz...";
+}
+
 void SleepCommand::execute() {
 	ICommand::execute();
 	std::this_thread::sleep_for(std::chrono::milliseconds(this->duration));

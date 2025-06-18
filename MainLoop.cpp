@@ -1,8 +1,11 @@
 #include "ConsoleManager.h"
+#include "ProcessScheduler.h"
 
 int main() {
     ConsoleManager::getInstance().init();
     ConsoleManager::getInstance().showMainConsole();
+
+	ProcessScheduler::getInstance().init();
 
     //int loopCount = 0;
     

@@ -16,20 +16,12 @@ void ConsoleManager::init() {
     currentConsole = mainConsole;
     currentConsole->display();
 
-    // start the scheduler
-    scheduler = new FCFSScheduler(4); // TODO: make this configurable
-    scheduler->schedulerStart();
-
     this->running = true;
 }
 
 // Show the main console screen
 void ConsoleManager::showMainConsole() {
     currentConsole = mainConsole;
-}
-
-void ConsoleManager::showScreenList() const {
-    scheduler->displayScreenList();
 }
 
 void ConsoleManager::setRunStatus(bool running) {
@@ -54,12 +46,9 @@ void ConsoleManager::openScreen(const std::string& name, bool resume) {
     }
     else if (it == consoles.end()) {
         // Screen doesn't exist
-        auto newProcessConsole = std::make_shared<ProcessConsole>();
-        newProcessConsole->setProcessName(name);
-        
+        auto newProcessConsole = std::make_shared<ProcessConsole>(name);
         
         consoles[name] = newProcessConsole;
-        
       
         currentConsole = newProcessConsole;
         //currentConsole->display();
