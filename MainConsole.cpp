@@ -105,7 +105,8 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
 }
 
 void MainConsole::handleSchedulerTest() {
-    std::cout << "scheduler-start command recognized. Doing something." << std::endl;
+	// This is temporary while scheduler-start is not implemented.
+    ProcessScheduler::getInstance().init();
 }
 
 void MainConsole::handleSchedulerStop() {

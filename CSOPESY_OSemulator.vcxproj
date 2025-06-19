@@ -134,6 +134,7 @@
     <ClCompile Include="MarqueeWorkerThread.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="ProcessConsole.cpp" />
+    <ClCompile Include="ProcessScheduler.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -149,6 +150,9 @@
     <ClInclude Include="AScheduler.h" />
     <ClInclude Include="ProcessScheduler.h" />
     <ClInclude Include="SymbolTable.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="config.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

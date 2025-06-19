@@ -3,8 +3,6 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <fstream>
-#include <filesystem>
 #include <thread>
 #include <queue>
 #include <mutex>
@@ -39,10 +37,6 @@ protected:
 	const int TOTAL_PROCESSES = 10; // temporary constant 
 
 	std::string getTimestamp();
-	/* OLD CODE
-	void writeToLog(const std::string& filename, const std::string& message);
-	void initializeLog(const Process& process);
-	*/
 
 public:
 	Scheduler(int cores) : numCores(cores) {
@@ -58,10 +52,6 @@ public:
 		for (int i = 0; i < TOTAL_PROCESSES; ++i) {
 			processList.emplace_back(); // reserve space for finished processes
 		}
-		/* OLD: create log directory
-		std::filesystem::create_directory("logs");
-		std::filesystem::current_path("logs");
-		*/
 	}
 	~Scheduler() = default;
 
@@ -69,7 +59,9 @@ public:
 	virtual void schedulerThread() = 0; // 1 thread
 	virtual void cpuCoreThread(int coreID) = 0; // {numCores} threads
 
-	void displayScreenList() const;
+	// String stream for screen -ls
+	std::ostringstream displayScreenList() const;
+
 	void schedulerStart();
 	void schedulerStop();
 

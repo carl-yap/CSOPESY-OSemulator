@@ -14,93 +14,68 @@ std::string Scheduler::getTimestamp() {
 	}
 }
 
-/* =============OLD FUNCTIONS TO CREATE LOG FILES=================
-void Scheduler::writeToLog(const std::string& filename, const std::string& message) {
-	std::ofstream logFile(filename, std::ios_base::app);
-	if (logFile.is_open()) {
-		logFile << message;
-		logFile.close();
-	}
-	else {
-		std::cerr << "Failed to open log file: " << filename << std::endl;
-	}
-}
+std::ostringstream Scheduler::displayScreenList() const {
+    std::ostringstream out;
+    int activeCPUs = 0;
+    for (int i = 0; i < numCores; ++i) {
+        if (coreBusy[i].get()->load()) { activeCPUs++; }
+    }
+    int cpuUtil = activeCPUs * 100 / numCores;
 
-void Scheduler::initializeLog(const Process& process) {
-	std::ofstream logFile(process.logFilename, std::ios_base::trunc);
-	if (logFile.is_open()) {
-		logFile << "Process name: " << process.name << std::endl;
-		logFile << "Logs: " << std::endl;
-		logFile << std::endl;
-		logFile.close();
-	}
-	else {
-		std::cerr << "Failed to initialize log file: " << process.logFilename << std::endl;
-	}
-}
-*/
+    out << "CPU utilization: " << cpuUtil << "%" << std::endl;
+    out << "Cores used: " << activeCPUs << std::endl;
+    out << "Cores available: " << numCores - activeCPUs << std::endl;
+    out << std::endl;
 
-void Scheduler::displayScreenList() const {
-	int activeCPUs = 0;
-	for (int i = 0; i < numCores; ++i) {
-		if (coreBusy[i].get()->load()) { activeCPUs++; }
-	}
-	int cpuUtil = activeCPUs * 100 / numCores;
+    out << "--------------------------------" << std::endl;
+    out << "Running processes:\n";
+    out << std::left
+        << std::setw(16) << "Name"
+        << std::setw(10) << "Core"
+        << std::setw(14) << "Progress"
+        << std::setw(12) << "StartTime"
+        << "\n";
 
-	std::cout << "CPU utilization: " << cpuUtil << "%" << std::endl;
-	std::cout << "Cores used: " << activeCPUs << std::endl;
-	std::cout << "Cores available: " << numCores - activeCPUs << std::endl;
-	std::cout << std::endl;
+    for (int i = 0; i < numCores; ++i) {
+        std::shared_ptr<Process> p = currentProcess[i];
 
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << "Running processes:\n";
-	std::cout << std::left
-		<< std::setw(16) << "Name"
-		<< std::setw(10) << "Core"
-		<< std::setw(14) << "Progress"
-		<< std::setw(12) << "StartTime"
-		<< "\n";
+        if (p == nullptr) { continue; }
+        else if (p != nullptr) {
+            std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->getStartTime());
+            struct tm localTime;
 
-	for (int i = 0; i < numCores; ++i) {
-		std::shared_ptr<Process> p = currentProcess[i];
+            if (localtime_s(&localTime, &start_time_t) == 0) {
+                std::ostringstream timeStream;
+                timeStream << std::put_time(&localTime, "%m/%d/%Y %I:%M:%S %p");
 
-		// TODO: Add timestamps when Process class is ready
-		if (p == nullptr) { continue; }
-		else if (p != nullptr) {
-			std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->getStartTime());
-			struct tm localTime;
+                out << std::left << std::setw(12) << p->getName()
+                    << "Core: " << i << "  "
+                    << std::setw(5) << "\t" << p->getCounter()
+                    << "\t" << timeStream.str()
+                    << std::endl;
+            }
+            else {
+                out << std::left << std::setw(12) << p->getName()
+                    << "Core: " << i << "  "
+                    << std::setw(5) << p->getCounter()
+                    << "[Error getting time]"
+                    << std::endl;
+            }
+        }
+    }
+    out << std::endl;
 
-			if (localtime_s(&localTime, &start_time_t) == 0) {
-				std::ostringstream timeStream;
-				timeStream << std::put_time(&localTime, "%m/%d/%Y %I:%M:%S %p");
-
-				std::cout << std::left << std::setw(12) << p->getName()
-					<< "Core: " << i << "  "
-					<< std::setw(5) << "\t" << p->getCounter()
-					<< "\t" << timeStream.str()
-					<< std::endl;
-			}
-			else {
-				std::cout << std::left << std::setw(12) << p->getName()
-					<< "Core: " << i << "  "
-					<< std::setw(5) << p->getCounter()
-					<< "[Error getting time]"
-					<< std::endl;
-			}
-		}
-	}
-	std::cout << std::endl;
-
-	std::cout << "Finished processes:" << std::endl;
+    out << "Finished processes:" << std::endl;
     {
         std::lock_guard<std::mutex> lock(finishedMutex);
-		for (Process p : finishedProcesses) {
-			std::cout << p.getName() << "\tFinished" << "\t"
-				<< p.getCounter() << std::endl;
-		}
+        for (const Process& p : finishedProcesses) {
+            out << p.getName() << "\tFinished" << "\t"
+                << p.getCounter() << std::endl;
+        }
     }
-	std::cout << "--------------------------------" << std::endl;
-	std::cout << std::endl;
+    out << "--------------------------------" << std::endl;
+    out << std::endl;
+    return out;
 }
 
 void Scheduler::schedulerStart() {

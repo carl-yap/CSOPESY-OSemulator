@@ -5,7 +5,7 @@ int main() {
     ConsoleManager::getInstance().init();
     ConsoleManager::getInstance().showMainConsole();
 
-	ProcessScheduler::getInstance().init();
+	ProcessScheduler::getInstance();
 
     //int loopCount = 0;
     

@@ -13,7 +13,7 @@ void ProcessConsole::display() const {
 	std::cout << "Current instruction line: " << p->getCounter() << std::endl;
 	std::cout << "Lines of code: " << p->getCmdListSize() << std::endl;
 	std::cout << std::endl;
-	std::cout << "Timestamp: " << p->getArrivalTime() << std::endl;
+	std::cout << "Created at " << p->getArrivalTime() << std::endl;
 	std::cout << std::endl;
 	std::cout << "Type 'exit' to return to main menu." << std::endl;
 }
