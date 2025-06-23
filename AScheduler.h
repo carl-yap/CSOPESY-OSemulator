@@ -18,11 +18,21 @@
 // abstract class for schedulers: FCFS, RR, SJN
 class Scheduler {
 protected:
+
+	int numCores;
+
+	// Default values — will be overridden by setters from config
+	int batchProcessFreq = 2;   // in milliseconds
+	int minIns = 10;
+	int maxIns = 20;
+	int delayPerExec = 0;
+
+	inline static std::atomic_uint64_t tickCount{ 0 };         // CPU tick counter
+	inline static std::atomic_bool tickThreadRunning{ false };  // Only one tick thread
 	inline static std::queue<std::shared_ptr<Process>> readyQueue;
 	inline static std::mutex queueMutex;
 	inline static std::condition_variable cvScheduler;
 
-	int numCores;
 	inline static std::vector<std::condition_variable> cvCores;
 	inline static std::vector<std::mutex> coreMutexes;
 	inline static std::vector<std::shared_ptr<Process>> currentProcess; // current process running on each core
@@ -33,8 +43,6 @@ protected:
 
 	inline static std::mutex finishedMutex;
 	inline static std::vector<Process> finishedProcesses;
-
-	const int TOTAL_PROCESSES = 10; // temporary constant 
 
 	std::string getTimestamp();
 
@@ -48,10 +56,6 @@ public:
 		for (int i = 0; i < numCores; ++i) {
 			coreBusy[i] = std::make_unique<std::atomic_bool>(false);
 		}
-		
-		for (int i = 0; i < TOTAL_PROCESSES; ++i) {
-			processList.emplace_back(); // reserve space for finished processes
-		}
 	}
 	~Scheduler() = default;
 
@@ -62,8 +66,15 @@ public:
 	// String stream for screen -ls
 	std::ostringstream displayScreenList() const;
 
+	void startTickThread();
 	void schedulerStart();
 	void schedulerStop();
+
+	void setNumCores(int n) { numCores = n; }
+	void setBatchProcessFreq(int f) { batchProcessFreq = f; }
+	void setMinIns(int m) { minIns = m; }
+	void setMaxIns(int m) { maxIns = m; }
+	void setDelayPerExec(int d) { delayPerExec = d; }
 
 	std::vector<std::shared_ptr<Process>> processList;
 };

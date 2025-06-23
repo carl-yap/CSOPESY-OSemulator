@@ -1,4 +1,7 @@
 #include "AScheduler.h"
+#include "ProcessScheduler.h"
+
+inline static std::atomic_int globalProcessCounter{ 1 };
 
 std::string Scheduler::getTimestamp() {
 	char output[50];
@@ -17,10 +20,41 @@ std::string Scheduler::getTimestamp() {
 std::ostringstream Scheduler::displayScreenList() const {
     std::ostringstream out;
     int activeCPUs = 0;
+
+    // Prepare running process info
+    std::vector<std::string> runningInfo;
+
     for (int i = 0; i < numCores; ++i) {
-        if (coreBusy[i].get()->load()) { activeCPUs++; }
+        std::lock_guard<std::mutex> lock(coreMutexes[i]);
+
+        if (coreBusy[i] && coreBusy[i]->load()) {
+            activeCPUs++;
+
+            std::shared_ptr<Process> p = currentProcess[i];
+            if (p) {
+                std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->getStartTime());
+                struct tm localTime;
+
+                std::ostringstream timeStream;
+                if (localtime_s(&localTime, &start_time_t) == 0) {
+                    timeStream << std::put_time(&localTime, "%m/%d/%Y %I:%M:%S %p");
+                }
+                else {
+                    timeStream << "[time error]";
+                }
+
+                std::ostringstream line;
+                line << std::left << std::setw(16) << p->getName()
+                    << std::setw(10) << ("Core " + std::to_string(i))
+                    << std::setw(14) << p->getCounter()
+                    << std::setw(12) << timeStream.str();
+
+                runningInfo.push_back(line.str());
+            }
+        }
     }
-    int cpuUtil = activeCPUs * 100 / numCores;
+
+    int cpuUtil = (numCores > 0) ? (activeCPUs * 100 / numCores) : 0;
 
     out << "CPU utilization: " << cpuUtil << "%" << std::endl;
     out << "Cores used: " << activeCPUs << std::endl;
@@ -36,70 +70,101 @@ std::ostringstream Scheduler::displayScreenList() const {
         << std::setw(12) << "StartTime"
         << "\n";
 
-    for (int i = 0; i < numCores; ++i) {
-        std::shared_ptr<Process> p = currentProcess[i];
-
-        if (p == nullptr) { continue; }
-        else if (p != nullptr) {
-            std::time_t start_time_t = std::chrono::system_clock::to_time_t(p->getStartTime());
-            struct tm localTime;
-
-            if (localtime_s(&localTime, &start_time_t) == 0) {
-                std::ostringstream timeStream;
-                timeStream << std::put_time(&localTime, "%m/%d/%Y %I:%M:%S %p");
-
-                out << std::left << std::setw(12) << p->getName()
-                    << "Core: " << i << "  "
-                    << std::setw(5) << "\t" << p->getCounter()
-                    << "\t" << timeStream.str()
-                    << std::endl;
-            }
-            else {
-                out << std::left << std::setw(12) << p->getName()
-                    << "Core: " << i << "  "
-                    << std::setw(5) << p->getCounter()
-                    << "[Error getting time]"
-                    << std::endl;
-            }
-        }
+    for (const auto& line : runningInfo) {
+        out << line << std::endl;
     }
+
     out << std::endl;
 
     out << "Finished processes:" << std::endl;
     {
         std::lock_guard<std::mutex> lock(finishedMutex);
         for (const Process& p : finishedProcesses) {
-            out << p.getName() << "\tFinished" << "\t"
-                << p.getCounter() << std::endl;
+            out << std::left << std::setw(16) << p.getName()
+                << "Finished\t" << p.getCounter() << std::endl;
         }
     }
+
     out << "--------------------------------" << std::endl;
     out << std::endl;
     return out;
 }
 
+
 void Scheduler::schedulerStart() {
-	// Start scheduler thread (detached)
-	std::thread(&Scheduler::schedulerThread, this).detach();
+    
+    running = true;
+    startTickThread();
 
-	// Start CPU core threads (detached)
-	for (int i = 0; i < numCores; ++i) {
-		std::thread(&Scheduler::cpuCoreThread, this, i).detach();
-	}
+    // Start scheduler and cores
+    std::thread(&Scheduler::schedulerThread, this).detach();
+    for (int i = 0; i < numCores; ++i)
+        std::thread(&Scheduler::cpuCoreThread, this, i).detach();
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Allow threads to start
+    // Preload initial processes immediately (use unique ID range)
+    for (int i = 0; i < numCores * 2; ++i) {
+        int pid = globalProcessCounter.fetch_add(1); // fetch next global number
+        std::string processName = "p" + std::to_string(pid);
 
-	// Fake process creation logic
-	for (int i = 0; i < TOTAL_PROCESSES; ++i) {
-		std::string processName = "Process_" + std::to_string(i + 1);
-		std::shared_ptr<Process> p = std::make_shared<Process>(i + 1, processName, 100, 500);
-		p->setState(Process::State::READY);
-		this->processList[i] = p; // temp storage for ProcessConsole
-		addProcess(p);
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
+        std::shared_ptr<Process> p = std::make_shared<Process>(pid, processName, minIns, maxIns);
+        p->setState(Process::State::READY);
+        addProcess(p);
+    }
 
-	// Main thread continues immediately; threads run in background
+    // Start batch process generation thread
+    std::thread([this]() {
+        while (running.load()) {
+            uint64_t lastTick = tickCount.load();
+
+            while (tickCount.load() < lastTick + batchProcessFreq && running.load()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+
+            if (!running.load()) {
+                break;
+            }
+
+            int pid = globalProcessCounter.fetch_add(1); // continue where preload left off
+            std::string processName = "p" + std::to_string(pid);
+
+            std::shared_ptr<Process> p = std::make_shared<Process>(
+                pid, processName, minIns, maxIns
+            );
+            p->setState(Process::State::READY);
+
+            if (processList.size() <= static_cast<size_t>(pid))
+                processList.resize(pid + 1);
+
+            processList[pid] = p;
+            addProcess(p);
+        }
+        }).detach();
 }
 
-void Scheduler::schedulerStop() { /* no op */ }
+
+void Scheduler::schedulerStop() {
+    running.store(false);
+    tickThreadRunning.store(false);
+
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        while (!readyQueue.empty()) readyQueue.pop();
+    }
+
+    cvScheduler.notify_all();
+    for (auto& cv : cvCores)
+        cv.notify_all();
+}
+
+
+void Scheduler::startTickThread() {
+    if (tickThreadRunning.load()) return;  // Prevent multiple tick threads
+    tickThreadRunning = true;
+
+    std::thread([]() {
+        while (running.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            tickCount++;
+        }
+        }).detach();
+}

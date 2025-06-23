@@ -1,4 +1,5 @@
 #include "ProcessScheduler.h"
+#include <fstream>
 
 ProcessScheduler& ProcessScheduler::getInstance() {
 	static ProcessScheduler instance;
@@ -15,7 +16,13 @@ void ProcessScheduler::init() {
 	else {
 		throw std::runtime_error("Unknown scheduler type: " + type);
 	}
-	//scheduler->schedulerStart();
+
+    scheduler->setBatchProcessFreq(batchProcessFreq);
+    scheduler->setMinIns(minIns);
+    scheduler->setMaxIns(maxIns);
+    scheduler->setDelayPerExec(delayPerExec);
+	scheduler->schedulerStart();
+
 }
 
 void ProcessScheduler::showScreenList() const {
@@ -36,4 +43,56 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
 		}
 	}
 	return nullptr;
+}
+
+
+void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
+    std::ifstream config("config.txt");
+    if (!config) {
+        std::cerr << "[WARN] Config file '" << filename << "' not found. Using default settings.\n";
+        return;
+    }
+
+    std::string key;
+    while (config >> key) {
+        if (key == "num-cpu") {
+            config >> numCPU;
+        }
+        else if (key == "scheduler") {
+            config >> type;
+        }
+        else if (key == "quantum-cycles") {
+            config >> quantumCycles;
+        }
+        else if (key == "batch-process-freq") {
+            config >> batchProcessFreq;
+        }
+        else if (key == "min-ins") {
+            config >> minIns;
+        }
+        else if (key == "max-ins") {
+            config >> maxIns;
+        }
+        else if (key == "delay-per-exec") {
+            config >> delayPerExec;
+        }
+        else {
+            std::string unknownValue;
+            config >> unknownValue; // discard
+            std::cerr << "[WARN] Unknown config key: " << key << ", ignoring...\n";
+        }
+    }
+
+    std::cout << "[INFO] Loaded config from " << filename << ":\n"
+        << "  num-cpu: " << numCPU << "\n"
+        << "  scheduler: " << type << "\n"
+        << "  quantum-cycles: " << quantumCycles << "\n"
+        << "  batch-process-freq: " << batchProcessFreq << "\n"
+        << "  min-ins: " << minIns << "\n"
+        << "  max-ins: " << maxIns << "\n"
+        << "  delay-per-exec: " << delayPerExec << "\n";
+}
+
+void ProcessScheduler::stop() {
+    if (scheduler) scheduler->schedulerStop();
 }

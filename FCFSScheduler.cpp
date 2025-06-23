@@ -1,9 +1,14 @@
 #include "FCFSScheduler.h"
 
 void FCFSScheduler::addProcess(std::shared_ptr<Process> process) {
+	if (!running.load()) {
+		std::cout << "[addProcess] Rejected " << process->getName() << " (scheduler is stopped)\n";
+		return;
+	}
+
 	std::lock_guard<std::mutex> lock(queueMutex);
 	readyQueue.push(process);
-	cvScheduler.notify_one(); // Notify the scheduler that a process was pushed to RQ
+	cvScheduler.notify_one();
 }
 
 void FCFSScheduler::schedulerThread() {
@@ -16,7 +21,9 @@ void FCFSScheduler::schedulerThread() {
 			});
 
 		// Assign the next process in the RQ to a CPU core
-		for (int core = 0; core < numCores && !readyQueue.empty(); ++core) {
+		static int lastAssignedCore = 0;
+		for (int i = 0; i < numCores && !readyQueue.empty(); ++i) {
+			int core = (lastAssignedCore + i) % numCores;
 			if (!coreBusy[core].get()->load()) { // if the core is not busy
 				std::shared_ptr<Process> proc = readyQueue.front();
 				readyQueue.pop();
@@ -41,6 +48,7 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 		cvCores[coreID].wait(lock, [this, coreID]() {
 			return currentProcess[coreID] != nullptr || !running.load();
 			});
+
 
 		if (currentProcess[coreID] != nullptr) {
 			std::shared_ptr<Process> proc = currentProcess[coreID];
@@ -78,15 +86,9 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 			currentProcess[coreID] = nullptr;
 			coreBusy[coreID].get()->store(false); 
 			completedProcesses++;
-
-			// if all processes are completed, notify the scheduler
-			if (completedProcesses.load() >= TOTAL_PROCESSES) {
-				running.store(false);
-				cvScheduler.notify_all(); // Notify the scheduler to stop
-				for (int i = 0; i < numCores; ++i) {
-					cvCores[i].notify_all(); // Notify all cores to stop
-				}
-			}
+		}
+		else {
+			return;
 		}
 	}
 }

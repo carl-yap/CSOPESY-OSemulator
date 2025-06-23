@@ -106,11 +106,14 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
 
 void MainConsole::handleSchedulerTest() {
 	// This is temporary while scheduler-start is not implemented.
-    ProcessScheduler::getInstance().init();
+    ProcessScheduler& ps = ProcessScheduler::getInstance();
+    ps.loadConfigFromFile("config.txt");  // Load before init
+    ps.init(); // Use loaded settings
 }
 
 void MainConsole::handleSchedulerStop() {
-    std::cout << "scheduler-stop command recognized. Doing something." << std::endl;
+    std::cout << "scheduler-stop command recognized. Shutting down scheduler." << std::endl;
+    ProcessScheduler::getInstance().stop();
 }
 
 void MainConsole::handleReportUtil() {
