@@ -97,7 +97,7 @@ void Scheduler::schedulerStart() {
     startTickThread();
 
     // Start scheduler and cores
-    std::thread(&Scheduler::schedulerThread, this).detach();
+	// std::thread(&Scheduler::schedulerThread, this).detach(); MOVED THIS TO ProcessScheduler.init()
     for (int i = 0; i < numCores; ++i)
         std::thread(&Scheduler::cpuCoreThread, this, i).detach();
 

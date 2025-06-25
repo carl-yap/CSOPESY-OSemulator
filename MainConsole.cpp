@@ -52,6 +52,9 @@ void MainConsole::process() {
         else if (lowerCommand == "marquee") {
             handleMarquee();
         }
+        else if (lowerCommand == "process-smi") {
+            ProcessScheduler::getInstance().showProcessList();
+        }
         else {
             std::cout << "Unknown command. Available commands: initialize, marquee, screen, scheduler-test, scheduler-stop, report-util, clear, exit" << std::endl;
         }
@@ -105,10 +108,7 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
 }
 
 void MainConsole::handleSchedulerTest() {
-	// This is temporary while scheduler-start is not implemented.
-    ProcessScheduler& ps = ProcessScheduler::getInstance();
-    ps.loadConfigFromFile("config.txt");  // Load before init
-    ps.init(); // Use loaded settings
+    ProcessScheduler::getInstance().start();
 }
 
 void MainConsole::handleSchedulerStop() {

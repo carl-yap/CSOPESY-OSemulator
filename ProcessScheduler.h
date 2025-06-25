@@ -14,8 +14,10 @@ public:
 	static ProcessScheduler& getInstance();
 
 	void init();
+	void showProcessList() const;
 	void showScreenList() const;
 	void makeReportUtil() const;
+	void start();
 	void stop();
 
 	std::shared_ptr<Process> fetchProcessByName(const std::string& name);

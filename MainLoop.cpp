@@ -5,7 +5,8 @@ int main() {
     ConsoleManager::getInstance().init();
     ConsoleManager::getInstance().showMainConsole();
 
-	ProcessScheduler::getInstance();
+    ProcessScheduler::getInstance().loadConfigFromFile("config.txt");
+	ProcessScheduler::getInstance().init();
 
     //int loopCount = 0;
     
