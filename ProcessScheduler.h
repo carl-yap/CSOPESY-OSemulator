@@ -6,6 +6,7 @@
 
 // Schedulers
 #include "FCFSScheduler.h"
+#include "RRScheduler.h" //THIS IS NEW
 
 class ProcessScheduler {
 public:

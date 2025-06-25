@@ -11,7 +11,7 @@ void ProcessScheduler::init() {
 		scheduler = std::make_shared<FCFSScheduler>(numCPU);
 	}
 	else if (type == "rr") {
-		scheduler = std::make_shared<FCFSScheduler>(numCPU); // TODO: change
+		scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles); //THIS IS EDITED
 	}
 	else {
 		throw std::runtime_error("Unknown scheduler type: " + type);
