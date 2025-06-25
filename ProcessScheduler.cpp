@@ -1,5 +1,4 @@
 #include "ProcessScheduler.h"
-#include <fstream>
 
 ProcessScheduler& ProcessScheduler::getInstance() {
 	static ProcessScheduler instance;
@@ -31,7 +30,19 @@ void ProcessScheduler::showScreenList() const {
 
 void ProcessScheduler::makeReportUtil() const {
 	std::string filename = "csopesy_log.txt";
-	// Make the file then write the displayScreenList to it
+	if (scheduler) {
+		std::ofstream ofs(filename);
+		if (!ofs) {
+			std::cerr << "report-util error: Failed to open " << filename << std::endl;
+			return;
+		}
+		ofs << scheduler->displayScreenList().str();
+		ofs.close();
+		std::cout << "Report successfully written to " << filename << std::endl;
+    }
+    else {
+		std::cerr << "report-util warning: No scheduler initialized." << std::endl;
+    }
 }
 
 std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string& name) {

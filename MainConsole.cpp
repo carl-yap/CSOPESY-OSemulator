@@ -117,7 +117,7 @@ void MainConsole::handleSchedulerStop() {
 }
 
 void MainConsole::handleReportUtil() {
-    std::cout << "report-util command recognized. Doing something." << std::endl;
+    ProcessScheduler::getInstance().makeReportUtil();
 }
 
 void MainConsole::handleMarquee() {

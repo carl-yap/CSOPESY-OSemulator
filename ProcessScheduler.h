@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <fstream>
 #include "Process.h"
 
 // Schedulers
