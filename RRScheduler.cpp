@@ -6,6 +6,11 @@ void RRScheduler::addProcess(std::shared_ptr<Process> process) {
         return;
     }
 
+    // Store process in processList for screen -ls functionality (same as FCFS)
+    if (processList.size() <= static_cast<size_t>(process->getPID()))
+        processList.resize(process->getPID() + 1);
+    processList[process->getPID()] = process;
+
     std::lock_guard<std::mutex> lock(queueMutex);
     readyQueue.push(process);
     cvScheduler.notify_one();
@@ -42,73 +47,68 @@ void RRScheduler::schedulerThread() {
 }
 
 void RRScheduler::cpuCoreThread(int coreID) {
-    while (running.load() || !readyQueue.empty()) {
+    while (running.load() || !readyQueue.empty() || currentProcess[coreID] != nullptr) {
         std::unique_lock<std::mutex> lock(coreMutexes[coreID]);
 
-        // Wait until a process is assigned or shutdown is requested
         cvCores[coreID].wait(lock, [this, coreID]() {
             return currentProcess[coreID] != nullptr || !running.load();
             });
 
-        if (currentProcess[coreID] != nullptr) {
-            std::shared_ptr<Process> proc = currentProcess[coreID];
-            proc->setState(Process::State::RUNNING);
+        if (currentProcess[coreID] == nullptr) continue;
 
-            // Set start time only if this is the first time running
-            if (proc->getStartTime() == std::chrono::system_clock::time_point{}) {
-                proc->setStartTime(std::chrono::system_clock::now());
-            }
+        std::shared_ptr<Process> proc = currentProcess[coreID];
+        proc->setState(Process::State::RUNNING);
 
-            lock.unlock(); // Unlock before processing to allow other cores to run
+        if (proc->getStartTime() == std::chrono::system_clock::time_point{}) {
+            proc->setStartTime(std::chrono::system_clock::now());
+        }
 
-            // Execute process for quantum cycles or until completion
-            int instructionsExecuted = 0;
-            while (instructionsExecuted < quantumCycles && !proc->isFinished()) {
-                proc->executeCurrentCommand();
-                proc->moveToNextLine();
-                instructionsExecuted++;
+        lock.unlock();
 
-                // Apply delay if configured
-                if (delayPerExec > 0) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
-                }
-            }
-
-            // Check if process is finished
-            if (proc->isFinished()) {
-                // Process completed
-                proc->setState(Process::State::TERMINATED);
-                proc->setEndTime(std::chrono::system_clock::now());
-
-                {
-                    std::lock_guard<std::mutex> finished_lock(finishedMutex);
-                    finishedProcesses.emplace_back(*proc);
-                }
-
-                // Cleanup
-                lock.lock();
-                currentProcess[coreID] = nullptr;
-                coreBusy[coreID].get()->store(false);
-                completedProcesses++;
-            }
-            else {
-                // Process not finished - preempt and put back in ready queue
-                proc->setState(Process::State::READY);
-
-                {
-                    std::lock_guard<std::mutex> queue_lock(queueMutex);
-                    readyQueue.push(proc);
-                    cvScheduler.notify_one();
-                }
-
-                // Cleanup
-                lock.lock();
-                currentProcess[coreID] = nullptr;
-                coreBusy[coreID].get()->store(false);
+        // Execute process for quantum
+        int instructionsExecuted = 0;
+        while (instructionsExecuted < quantumCycles && !proc->isFinished()) {
+            proc->executeCurrentCommand();
+            proc->moveToNextLine();
+            instructionsExecuted++;
+            if (delayPerExec > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
             }
         }
+
+        // Process completion handling
+        lock.lock();
+        if (proc->isFinished()) {
+            proc->setState(Process::State::TERMINATED);
+            proc->setEndTime(std::chrono::system_clock::now());
+
+            // Ensure process is properly tracked
+            if (processList.size() <= static_cast<size_t>(proc->getPID())) {
+                processList.resize(proc->getPID() + 1);
+            }
+            processList[proc->getPID()] = proc;
+
+            {
+                std::lock_guard<std::mutex> finished_lock(finishedMutex);
+                finishedProcesses.push_back(*proc);
+            }
+
+            currentProcess[coreID] = nullptr;
+            coreBusy[coreID].get()->store(false);
+            completedProcesses.fetch_add(1);
+
+            // Explicitly notify in case this was the last process
+            cvScheduler.notify_one();
+        }
         else {
-            return;
+            proc->setState(Process::State::READY);
+            {
+                std::lock_guard<std::mutex> queue_lock(queueMutex);
+                readyQueue.push(proc);
+            }
+            currentProcess[coreID] = nullptr;
+            coreBusy[coreID].get()->store(false);
+            cvScheduler.notify_one();
         }
     }
 }
