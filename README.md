@@ -2,9 +2,12 @@
 
 A lightweight operating system emulator written in modern C++20, demonstrating core OS concepts including process scheduling, I/O handling, and immediate-mode console UI.
 
+created by Group 2: BACOSA, Gabriel | MANIPOL, Marion | TAN, Edward | YAP, Carl
+
 ## Prerequisites
 
 - A C++ compiler (e.g., `g++`, `clang++`)
+- A local copy of the project: `git clone https://github.com/carl-yap/CSOPESY-OSemulator.git`
 
 ## Compilation
 
@@ -28,10 +31,14 @@ After successful compilation, execute the emulator with:
 |---------------------|--------------------------------------|
 | MainLoop.cpp	      | Entry point (main scheduler loop)    |
 | Process.cpp	        | Representation of a runnable program |
-| SchedulerFCFS.cpp	  | FCFS scheduling implementation       |
+| FCFSScheduler.cpp	  | FCFS scheduling implementation       |
+| RRScheduler.cpp     | Round Robin scheduling impl.         |
 | ConsoleManager.cpp	| Console display & process            |
+| MainConsole.cpp     | Main menu display & command interpret|
+| ProcessConsole.cpp  | Process info & screen-smi            |
 | MarqueeConsole.cpp	| Immediate-mode text display          |
 
 ## Future Work
 
 - Create a `.bat` file to open the emulator with one step
+- Memory Management (MO2)
