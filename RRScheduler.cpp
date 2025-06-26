@@ -69,6 +69,8 @@ void RRScheduler::cpuCoreThread(int coreID) {
         int instructionsExecuted = 0;
         while (instructionsExecuted < quantumCycles && !proc->isFinished()) {
             proc->executeCurrentCommand();
+            // After proc->executeCurrentCommand();
+            proc->addLog(coreID, "Hello world from " + proc->getName());
             proc->moveToNextLine();
             instructionsExecuted++;
             if (delayPerExec > 0) {

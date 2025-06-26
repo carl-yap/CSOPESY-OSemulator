@@ -8,14 +8,30 @@ ProcessConsole::ProcessConsole(const String pName) : Console("PROCESS_CONSOLE") 
 void ProcessConsole::onEnabled() { /* no-op */ }
 
 void ProcessConsole::display() const {
-	std::cout << "Process: " << p->getName() << std::endl;
-	std::cout << "ID: " << p->getPID() << std::endl;
-	std::cout << "Current instruction line: " << p->getCounter() << std::endl;
-	std::cout << "Lines of code: " << p->getCmdListSize() << std::endl;
-	std::cout << std::endl;
-	std::cout << "Created at " << p->getArrivalTime() << std::endl;
-	std::cout << std::endl;
-	std::cout << "Type 'exit' to return to main menu." << std::endl;
+    std::cout << "Process name: " << p->getName() << std::endl;
+    std::cout << "ID: " << p->getPID() << std::endl;
+    std::cout << "Logs:" << std::endl;
+
+    // Print logs
+    for (const auto& log : p->getLogs()) {
+        // Format timestamp
+        std::time_t t = std::chrono::system_clock::to_time_t(log.timestamp);
+        std::tm tm;
+        localtime_s(&tm, &t);
+        char buf[32];
+        std::strftime(buf, sizeof(buf), "(%m/%d/%Y %I:%M:%S%p)", &tm);
+
+        std::cout << buf << " Core:" << log.core << " : " << log.message << std::endl;
+    }
+
+    std::cout << std::endl;
+    std::cout << "Current instruction line: " << p->getCounter() << std::endl;
+    std::cout << "Lines of code: " << p->getCmdListSize() << std::endl;
+    if (p->isFinished()) {
+        std::cout << "Finished!" << std::endl;
+    }
+    std::cout << std::endl;
+    std::cout << "Type 'exit' to return to main menu." << std::endl;
 }
 
 void ProcessConsole::process() {
@@ -27,7 +43,20 @@ void ProcessConsole::process() {
 			ConsoleManager::getInstance().showMainConsole();
 		}
 		else if (command == "process-smi") {
-			// Print current instruction line and lines of code, and finished! if done
+			// Print logs
+			std::cout << "Process name: " << p->getName() << std::endl;
+			std::cout << "ID: " << p->getPID() << std::endl;
+			std::cout << "Logs:" << std::endl;
+			for (const auto& log : p->getLogs()) {
+				std::time_t t = std::chrono::system_clock::to_time_t(log.timestamp);
+				std::tm tm;
+				localtime_s(&tm, &t);
+				char buf[32];
+				std::strftime(buf, sizeof(buf), "(%m/%d/%Y %I:%M:%S%p)", &tm);
+
+				std::cout << buf << " Core:" << log.core << " : " << log.message << std::endl;
+			}
+			std::cout << std::endl;
 			std::cout << "Current instruction line: " << p->getCounter() << std::endl;
 			std::cout << "Lines of code: " << p->getCmdListSize() << std::endl;
 			if (p->isFinished()) {

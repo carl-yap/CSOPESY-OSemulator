@@ -45,6 +45,15 @@ public:
 	// Check if the process is finished
 	bool isFinished() const;
 
+	struct LogEntry {
+		std::chrono::system_clock::time_point timestamp;
+		int core;
+		std::string message;
+	};
+
+	void addLog(int core, const std::string& message);
+	const std::vector<LogEntry>& getLogs() const;
+
 private:
 	int pid;
 	std::string name;
@@ -66,4 +75,6 @@ private:
 	TimePoint arrivalTime;
 	TimePoint startTime;
 	TimePoint endTime;
+
+	std::vector<LogEntry> logs;
 };

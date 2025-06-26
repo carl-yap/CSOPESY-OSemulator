@@ -63,6 +63,8 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 			// Simulate process execution
 			for (int i = 0; i < proc->getCmdListSize(); ++i) {
 				proc->executeCurrentCommand();
+				// After proc->executeCurrentCommand();
+				proc->addLog(coreID, "Hello world from " + proc->getName());
 				proc->moveToNextLine();
 
 				/* OLD BLOCK: log the command execution

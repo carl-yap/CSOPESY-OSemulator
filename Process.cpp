@@ -56,6 +56,10 @@ Process::TimePoint Process::getStartTime() const {
 	return this->startTime;
 }
 
+const std::vector<Process::LogEntry>& Process::getLogs() const {
+    return logs;
+}
+
 /*============== SETTERS ================*/
 void Process::setState(State newState) {
 	this->state = newState;
@@ -85,5 +89,13 @@ int Process::getRemainingBurstTime() const {
 
 bool Process::isFinished() const {
 	return this->programCounter >= this->instructions.size();
+}
+
+void Process::addLog(int core, const std::string& message) {
+    logs.push_back(LogEntry{ std::chrono::system_clock::now(), core, message });
+}
+
+void logHelloWorld(Process* proc, int coreID) {
+    proc->addLog(coreID, "Hello world from " + proc->getName());
 }
 

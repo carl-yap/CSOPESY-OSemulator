@@ -83,9 +83,8 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
             return p;
         }
     }
-	return nullptr;
+    return nullptr;
 }
-
 
 void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
     std::ifstream config("config.txt");
