@@ -97,7 +97,7 @@ void Scheduler::schedulerStart() {
     startTickThread();
 
     // Start scheduler and cores
-	// std::thread(&Scheduler::schedulerThread, this).detach(); MOVED THIS TO ProcessScheduler.init()
+    std::thread(&Scheduler::schedulerThread, this).detach();
     for (int i = 0; i < numCores; ++i)
         std::thread(&Scheduler::cpuCoreThread, this, i).detach();
 
@@ -143,17 +143,18 @@ void Scheduler::schedulerStart() {
 
 
 void Scheduler::schedulerStop() {
+    // Signal all threads to stop
     running.store(false);
     tickThreadRunning.store(false);
-
-    {
-        std::lock_guard<std::mutex> lock(queueMutex);
-        while (!readyQueue.empty()) readyQueue.pop();
-    }
-
+    
+    // Notify all waiting threads to wake up and check termination conditions
     cvScheduler.notify_all();
-    for (auto& cv : cvCores)
+    for (auto& cv : cvCores) {
         cv.notify_all();
+    }
+    
+    // Remove the queue clearing operation to preserve existing processes
+    // The existing processes will continue to be processed until completion
 }
 
 
