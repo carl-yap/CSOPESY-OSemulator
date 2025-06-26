@@ -64,17 +64,20 @@ void ProcessScheduler::makeReportUtil() const {
 std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string& name) {
     bool procExists = false;
 
-	if (scheduler) {
-		for (const auto& process : scheduler->processList) {
-			// Check if the process already exists
-			if (process->getName() == name) {
-				return std::make_shared<Process>(*process);
-			}
-		}
+    if (scheduler) {
+        for (const auto& process : scheduler->processList) {
+            // Check if the process already exists
+            if (process->getName() == name) {
+                return std::make_shared<Process>(*process);
+            }
+        }
         if (!procExists) {
-			// Process does not exist, create a new one
-			int id = scheduler->processList.size() + 1;
+            // Process does not exist, create a new one
+            int id = scheduler->processList.size() + 1;
             std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns);
+            p->setState(Process::State::READY);
+            // Set startTime to now for new process
+            p->setStartTime(std::chrono::system_clock::now());
             scheduler->processList.push_back(p); // Add to list of procs
             scheduler->addProcess(p); // send to RQ
             return p;

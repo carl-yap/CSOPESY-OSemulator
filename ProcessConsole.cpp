@@ -26,6 +26,14 @@ void ProcessConsole::process() {
 		if (command == "exit") {
 			ConsoleManager::getInstance().showMainConsole();
 		}
+		else if (command == "process-smi") {
+			// Print current instruction line and lines of code, and finished! if done
+			std::cout << "Current instruction line: " << p->getCounter() << std::endl;
+			std::cout << "Lines of code: " << p->getCmdListSize() << std::endl;
+			if (p->isFinished()) {
+				std::cout << "Finished!" << std::endl;
+			}
+		}
 		else {
 			std::cout << "Unknown command: " << command << std::endl;
 		}
