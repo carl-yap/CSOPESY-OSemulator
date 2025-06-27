@@ -27,7 +27,7 @@ std::ostringstream Scheduler::displayScreenList() const {
     for (int i = 0; i < numCores; ++i) {
         std::lock_guard<std::mutex> lock(coreMutexes[i]);
 
-        if (coreBusy[i] && coreBusy[i]->load()) {
+        if (coreBusy[i] && coreBusy[i].get()->load()) {
             activeCPUs++;
 
             std::shared_ptr<Process> p = currentProcess[i];
@@ -97,12 +97,12 @@ void Scheduler::schedulerStart() {
     startTickThread();
 
     // Start scheduler and cores
-    std::thread(&Scheduler::schedulerThread, this).detach();
+    // std::thread(&Scheduler::schedulerThread, this).detach();
     for (int i = 0; i < numCores; ++i)
         std::thread(&Scheduler::cpuCoreThread, this, i).detach();
 
     // Preload initial processes immediately (use unique ID range)
-    for (int i = 0; i < numCores * 2; ++i) {
+    for (int i = 0; i < numCores * 0; ++i) {
         int pid = globalProcessCounter.fetch_add(1); // fetch next global number
         std::string processName = "p" + std::to_string(pid);
 
@@ -113,7 +113,7 @@ void Scheduler::schedulerStart() {
 
     // Start batch process generation thread
     std::thread([this]() {
-        while (running.load()) {
+        while (tickThreadRunning.load()) {
             uint64_t lastTick = tickCount.load();
 
             while (tickCount.load() < lastTick + batchProcessFreq && running.load()) {
@@ -144,7 +144,7 @@ void Scheduler::schedulerStart() {
 
 void Scheduler::schedulerStop() {
     // Signal all threads to stop
-    running.store(false);
+    // running.store(false);
     tickThreadRunning.store(false);
     
     // Notify all waiting threads to wake up and check termination conditions
@@ -164,7 +164,7 @@ void Scheduler::startTickThread() {
 
     std::thread([]() {
         while (running.load()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             tickCount++;
         }
         }).detach();
