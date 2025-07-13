@@ -29,11 +29,16 @@ public:
 	void setMinIns(int m) { minIns = m; }
 	void setMaxIns(int m) { maxIns = m; }
 	void setDelayPerExec(int d) { delayPerExec = d; }
+	void setMaxOverallMem(size_t m) { maxOverallMem = m; }
+	void setMemPerFrame(size_t m) { memPerFrame = m; }
+	void setMemPerProc(size_t m) { memPerProc = m; }
+
 	void loadConfigFromFile(const std::string& filename);
 
 private:
 	ProcessScheduler() {};
 	std::shared_ptr<Scheduler> scheduler = nullptr;
+	std::shared_ptr<FlatMemoryAllocator> memoryAllocator;
 
 	// Scheduler parameters (default)
 	int			numCPU			= 4;
@@ -43,4 +48,7 @@ private:
 	int			minIns			= 1000;
 	int			maxIns			= 2000;
 	int			delayPerExec	= 0;
+	size_t      maxOverallMem   = 16 * 1024;
+	size_t      memPerFrame     = 16;
+	size_t		memPerProc		= 4096;
 };

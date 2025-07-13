@@ -1,4 +1,4 @@
-#include "RRScheduler.h"
+﻿#include "RRScheduler.h"
 
 void RRScheduler::addProcess(std::shared_ptr<Process> process) {
     if (!running.load()) {
@@ -10,6 +10,17 @@ void RRScheduler::addProcess(std::shared_ptr<Process> process) {
     if (processList.size() <= static_cast<size_t>(process->getPID()))
         processList.resize(process->getPID() + 1);
     processList[process->getPID()] = process;
+
+    // SET PID before allocating
+    static_cast<FlatMemoryAllocator&>(memoryAllocator).setCurrentPID(process->getPID());
+    void* memPtr = memoryAllocator.allocate(memPerProc); // assumes memPerProc is stored in this class
+
+    if (!memPtr) {
+        //std::cout << "[addProcess] Memory full for " << process->getName() << ", moving to back of queue\n";
+        std::lock_guard<std::mutex> lock(queueMutex);
+        readyQueue.push(process); // memory full → retry later
+        return;
+    }
 
     std::lock_guard<std::mutex> lock(queueMutex);
     readyQueue.push(process);
@@ -73,6 +84,13 @@ void RRScheduler::cpuCoreThread(int coreID) {
             proc->addLog(coreID, "Hello world from " + proc->getName());
             proc->moveToNextLine();
             instructionsExecuted++;
+            if (instructionsExecuted == quantumCycles) {
+                std::string snapshot = memoryAllocator.visualizeMemory();
+                int cycle = tickCount / quantumCycles;
+                std::ofstream ofs("memory_stamp_" + std::to_string(cycle) + ".txt");
+                if (ofs) ofs << snapshot;
+                ofs.close();
+            }
             if (delayPerExec > 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
             }

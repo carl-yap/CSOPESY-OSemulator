@@ -106,7 +106,7 @@ void Scheduler::schedulerStart() {
         int pid = globalProcessCounter.fetch_add(1); // fetch next global number
         std::string processName = "p" + std::to_string(pid);
 
-        std::shared_ptr<Process> p = std::make_shared<Process>(pid, processName, minIns, maxIns);
+        std::shared_ptr<Process> p = std::make_shared<Process>(pid, processName, minIns, maxIns, memPerProc);
         p->setState(Process::State::READY);
         addProcess(p);
     }
@@ -128,7 +128,7 @@ void Scheduler::schedulerStart() {
             std::string processName = "p" + std::to_string(pid);
 
             std::shared_ptr<Process> p = std::make_shared<Process>(
-                pid, processName, minIns, maxIns
+				pid, processName, minIns, maxIns, memPerProc
             );
             p->setState(Process::State::READY);
 

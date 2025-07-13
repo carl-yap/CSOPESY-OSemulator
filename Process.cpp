@@ -1,17 +1,13 @@
 #include "Process.h"
 
-Process::Process(int id, const std::string& name, int minIns, int maxIns) {
-	this->pid = id;
-	this->name = name;
-	this->state = State::NEW;
-	this->programCounter = 0;
 
-	// Generate a random number of instructions of length [minIns, maxIns]
+Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t memPerProc)
+	: pid(id), name(name), state(State::NEW), programCounter(0), memoryRequired(memPerProc)
+{
 	generateInstructionsBetween(minIns, maxIns);
-
-	// set the arrival time to NOW
-	this->arrivalTime = std::chrono::system_clock::now();
+	arrivalTime = std::chrono::system_clock::now();
 }
+
 
 void Process::generateInstructionsBetween(int min, int max) {
 	int n = min + rand() % (max - min + 1);
@@ -58,6 +54,10 @@ Process::TimePoint Process::getStartTime() const {
 
 const std::vector<Process::LogEntry>& Process::getLogs() const {
     return logs;
+}
+
+size_t Process::getMemoryRequired() const {
+	return this->memoryRequired;
 }
 
 /*============== SETTERS ================*/
