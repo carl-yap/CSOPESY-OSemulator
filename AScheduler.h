@@ -14,8 +14,9 @@
 #include <string>
 
 #include "Process.h"
+#include "MemoryAllocator.h"
 
-// abstract class for schedulers: FCFS, RR, SJN
+// abstract class for schedulers: FCFS, RR
 class Scheduler {
 protected:
 
@@ -26,6 +27,7 @@ protected:
 	int minIns = 10;
 	int maxIns = 20;
 	int delayPerExec = 0;
+	int maxOverallMemory = 100; 
 
 	inline static std::atomic_uint64_t tickCount{ 0 };         // CPU tick counter
 	inline static std::atomic_bool tickThreadRunning{ false };  // Only one tick thread
@@ -46,8 +48,11 @@ protected:
 
 	std::string getTimestamp();
 
+	// MCO2
+	IMemoryAllocator& memoryAllocator;
+
 public:
-	Scheduler(int cores) : numCores(cores) {
+	Scheduler(int cores, IMemoryAllocator& allocator) : numCores(cores), memoryAllocator(allocator) {
 		// initialize vectors based on the number of cores
 		cvCores = std::vector<std::condition_variable>(numCores);
 		coreMutexes = std::vector<std::mutex>(numCores);
@@ -75,6 +80,7 @@ public:
 	void setMinIns(int m) { minIns = m; }
 	void setMaxIns(int m) { maxIns = m; }
 	void setDelayPerExec(int d) { delayPerExec = d; }
+	void setMaxOverallMemory(int m) { maxOverallMemory = m; }
 
 	std::vector<std::shared_ptr<Process>> processList;
 };

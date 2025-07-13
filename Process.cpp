@@ -1,10 +1,11 @@
 #include "Process.h"
 
-Process::Process(int id, const std::string& name, int minIns, int maxIns) {
+Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t memPerProc) {
 	this->pid = id;
 	this->name = name;
 	this->state = State::NEW;
 	this->programCounter = 0;
+	this->memoryRequired = memPerProc;
 
 	// Generate a random number of instructions of length [minIns, maxIns]
 	generateInstructionsBetween(minIns, maxIns);
@@ -58,6 +59,10 @@ Process::TimePoint Process::getStartTime() const {
 
 const std::vector<Process::LogEntry>& Process::getLogs() const {
     return logs;
+}
+
+size_t Process::getMemoryRequired() const {
+	return this->memoryRequired;
 }
 
 /*============== SETTERS ================*/

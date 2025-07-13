@@ -6,20 +6,25 @@ ProcessScheduler& ProcessScheduler::getInstance() {
 }
 
 void ProcessScheduler::init() {
+    // MCO2 requirement
+    FlatMemoryAllocator memoryAllocator(maxOverallMem);
+
 	if (type == "fcfs") {
-		scheduler = std::make_shared<FCFSScheduler>(numCPU);
+		scheduler = std::make_shared<FCFSScheduler>(numCPU, memoryAllocator); // Needs to be changed with allocation
 	}
 	else if (type == "rr") {
-		scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles); //THIS IS EDITED
+		scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles, memoryAllocator); // Needs to be changed with allocation
 	}
 	else {
 		throw std::runtime_error("Unknown scheduler type: " + type);
 	}
 
+    // copying scheduler variables
     scheduler->setBatchProcessFreq(batchProcessFreq);
     scheduler->setMinIns(minIns);
     scheduler->setMaxIns(maxIns);
     scheduler->setDelayPerExec(delayPerExec);
+    scheduler->setMaxOverallMemory(maxOverallMem);
 	
     // scheduler->schedulerStart();
     std::thread(&Scheduler::schedulerThread, scheduler).detach();
@@ -74,7 +79,7 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
         if (!procExists) {
             // Process does not exist, create a new one
             int id = scheduler->processList.size() + 1;
-            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns);
+            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, this->memPerProc);
             p->setState(Process::State::READY);
             // Set startTime to now for new process
             p->setStartTime(std::chrono::system_clock::now());
@@ -116,6 +121,15 @@ void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
         else if (key == "delay-per-exec") {
             config >> delayPerExec;
         }
+        else if (key == "max-overall-mem") {
+            config >> maxOverallMem;
+        }
+        else if (key == "mem-per-frame") {
+			config >> memPerFrame;
+        }
+        else if (key == "mem-per-proc") {
+            config >> memPerProc;
+        }
         else {
             std::string unknownValue;
             config >> unknownValue; // discard
@@ -131,7 +145,10 @@ void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
         << "  batch-process-freq: " << batchProcessFreq << "\n"
         << "  min-ins: " << minIns << "\n"
         << "  max-ins: " << maxIns << "\n"
-        << "  delay-per-exec: " << delayPerExec << "\n";
+        << "  delay-per-exec: " << delayPerExec << "\n"
+		<< "  max-overall-mem: " << maxOverallMem << "\n"
+		<< "  mem-per-frame: " << memPerFrame << "\n"
+        << "  mem-per-proc: " << memPerProc << "\n";
 }
 
 void ProcessScheduler::start() {

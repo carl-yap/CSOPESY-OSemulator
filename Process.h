@@ -20,7 +20,7 @@ public:
 	typedef std::vector<std::shared_ptr<ICommand>> CommandList;
 	typedef std::chrono::system_clock::time_point TimePoint;
 
-	Process(int id, const std::string& n, int minIns, int maxIns);
+	Process(int id, const std::string& n, int minIns, int maxIns, size_t memPerProc);
 	void generateInstructionsBetween(int min, int max);
 
 	State		getState() const;
@@ -31,6 +31,7 @@ public:
 	TimePoint	getStartTime() const;
 	TimePoint	getEndTime() const;
 	TimePoint	getArrivalTime() const;
+	size_t		getMemoryRequired() const;
 
 	void setState(State newState);
 	void setStartTime(TimePoint startTime);
@@ -77,4 +78,7 @@ private:
 	TimePoint endTime;
 
 	std::vector<LogEntry> logs;
+
+	// Memory Allocation 
+	size_t memoryRequired;
 };
