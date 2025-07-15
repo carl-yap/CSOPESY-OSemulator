@@ -19,6 +19,7 @@ public:
 	void makeReportUtil() const;
 	void start();
 	void stop();
+	void exit(); // cleanup resources & threads
 
 	std::shared_ptr<Process> fetchProcessByName(const std::string& name);
 

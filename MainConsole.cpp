@@ -27,7 +27,9 @@ void MainConsole::process() {
 
         if (lowerCommand == "exit") {
             std::cout << "exit command recognized. Exiting application." << std::endl;
+            // Cleanup
             ConsoleManager::getInstance().setRunStatus(false);
+            ProcessScheduler::getInstance().exit();
             return;
         }
         else if (lowerCommand == "clear") {

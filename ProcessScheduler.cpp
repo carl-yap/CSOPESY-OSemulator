@@ -24,7 +24,7 @@ void ProcessScheduler::init() {
     scheduler->setMinIns(minIns);
     scheduler->setMaxIns(maxIns);
     scheduler->setDelayPerExec(delayPerExec);
-    scheduler->setMaxOverallMemory(maxOverallMem);
+    scheduler->setMaxOverallMemory(static_cast<int>(maxOverallMem));
 	
     // scheduler->schedulerStart();
     std::thread(&Scheduler::schedulerThread, scheduler).detach();
@@ -78,7 +78,7 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
         }
         if (!procExists) {
             // Process does not exist, create a new one
-            int id = scheduler->processList.size() + 1;
+            int id = static_cast<int>(scheduler->processList.size()) + 1;
             std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, this->memPerProc);
             p->setState(Process::State::READY);
             // Set startTime to now for new process
@@ -158,6 +158,10 @@ void ProcessScheduler::start() {
 void ProcessScheduler::stop() {
     if (scheduler) {
         scheduler->schedulerStop();  // signal all threads to stop
-        scheduler = nullptr;         // force cleanup if shared_ptr
+        // scheduler = nullptr;         // force cleanup if shared_ptr
     }
+}
+
+void ProcessScheduler::exit() {
+    if (scheduler) scheduler->cleanUp();
 }

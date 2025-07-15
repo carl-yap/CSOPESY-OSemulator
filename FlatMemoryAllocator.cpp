@@ -4,6 +4,9 @@ FlatMemoryAllocator::FlatMemoryAllocator(size_t maximumSize, size_t memPerProcSi
     : maxSize(maximumSize), allocatedSize(0), memPerProc(memPerProcSize) {
     memory.resize(maxSize, '.');  // initialize all memory blocks as free
     initializeMemory();
+
+    // snapshot storage
+	std::filesystem::create_directory("mem_snapshots");
 }
 
 /*============== Overriden Methods ================*/
@@ -13,7 +16,6 @@ void* FlatMemoryAllocator::allocate(size_t size) {
 	for (size_t i = 0; i < maxSize - size + 1; ++i) {
 		if (!allocationMap[i] && canAllocateAt(i, size)) {
 			allocateAt(i, size); // Fills the allocation map & updates allocated size
-			processMap[i] = currentPID;
 			return &memory[i];
 		}
 	}
@@ -102,6 +104,7 @@ void FlatMemoryAllocator::allocateAt(size_t index, size_t size) {
 		memory[i] = 'X'; // 'X' represents allocated memory
 	}
 	allocatedSize += size;
+    processMap[index] = currentPID;
 }
 
 void FlatMemoryAllocator::deallocateAt(size_t index) {
@@ -109,4 +112,5 @@ void FlatMemoryAllocator::deallocateAt(size_t index) {
 	for (size_t i = index; i < maxSize && allocationMap[i]; ++i) {
 		memory[i] = '.'; // Reset to free memory representation
 	}
+    processMap[index] = -1;
 }

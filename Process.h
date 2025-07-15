@@ -31,6 +31,11 @@ public:
 	TimePoint	getEndTime() const;
 	TimePoint	getArrivalTime() const;
 	size_t		getMemoryRequired() const;
+	
+	void        setAllocationIndex(void* i) { allocIndex = i; }
+	void*       getAllocationIndex() { return allocIndex; }
+	void        setAllocation(bool a) { allocated = a; }
+	bool		isAllocated() { return allocated; }
 
 	void setState(State newState);
 	void setStartTime(TimePoint startTime);
@@ -79,5 +84,7 @@ private:
 	std::vector<LogEntry> logs;
 
 	// Memory Allocation 
-	size_t memoryRequired;
+	size_t	memoryRequired;
+	void*	allocIndex;
+	bool	allocated;
 };

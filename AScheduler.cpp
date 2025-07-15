@@ -169,3 +169,42 @@ void Scheduler::startTickThread() {
         }
         }).detach();
 }
+
+void Scheduler::cleanUp() {
+    // Stop the tick thread and scheduler
+    running.store(false);
+    tickThreadRunning.store(false);
+
+    // Notify all waiting threads to wake up and exit
+    cvScheduler.notify_all();
+    for (auto& cv : cvCores) {
+        cv.notify_all();
+    }
+
+    // Clear the ready queue
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        while (!readyQueue.empty()) {
+            readyQueue.pop();
+        }
+    }
+
+    // Clear current processes and mark all cores as not busy
+    for (int i = 0; i < numCores; ++i) {
+        if (i < static_cast<int>(currentProcess.size())) {
+            currentProcess[i] = nullptr;
+        }
+        if (i < static_cast<int>(coreBusy.size()) && coreBusy[i]) {
+            coreBusy[i]->store(false);
+        }
+    }
+
+    // Clear finished processes
+    {
+        std::lock_guard<std::mutex> lock(finishedMutex);
+        finishedProcesses.clear();
+    }
+
+    // Clear process list
+    processList.clear();
+}

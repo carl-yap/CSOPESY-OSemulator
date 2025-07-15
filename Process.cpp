@@ -6,6 +6,8 @@ Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t
 {
 	generateInstructionsBetween(minIns, maxIns);
 	arrivalTime = std::chrono::system_clock::now();
+	
+	allocated = false; // Initially not allocated
 }
 
 

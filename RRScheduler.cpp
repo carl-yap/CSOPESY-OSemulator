@@ -21,6 +21,10 @@ void RRScheduler::addProcess(std::shared_ptr<Process> process) {
         readyQueue.push(process); // memory full → retry later
         return;
     }
+    else { // mark process as allocated 
+        process->setAllocation(true); 
+        process->setAllocationIndex(memPtr);
+    } 
 
     std::lock_guard<std::mutex> lock(queueMutex);
     readyQueue.push(process);
@@ -43,6 +47,21 @@ void RRScheduler::schedulerThread() {
             if (!coreBusy[core].get()->load()) { // if the core is not busy
                 std::shared_ptr<Process> proc = readyQueue.front();
                 readyQueue.pop();
+                
+                if (!proc->isAllocated()) { 
+					// Attempt to allocate memory for the process
+                    static_cast<FlatMemoryAllocator&>(memoryAllocator).setCurrentPID(proc->getPID());
+                    void* memPtr = memoryAllocator.allocate(memPerProc);
+
+					if (!memPtr) { // still no memory available
+                        readyQueue.push(proc); // retry later
+                        continue;
+                    }
+                    else { // it found a block open
+						proc->setAllocation(true); 
+						proc->setAllocationIndex(memPtr); 
+                    }
+                }
 
                 {
                     std::lock_guard<std::mutex> core_lock(coreMutexes[core]);
@@ -86,8 +105,8 @@ void RRScheduler::cpuCoreThread(int coreID) {
             instructionsExecuted++;
             if (instructionsExecuted == quantumCycles) {
                 std::string snapshot = memoryAllocator.visualizeMemory();
-                int cycle = tickCount / quantumCycles;
-                std::ofstream ofs("memory_stamp_" + std::to_string(cycle) + ".txt");
+                int cycle = static_cast<int>(tickCount) / quantumCycles;
+                std::ofstream ofs("mem_snapshots/memory_stamp_" + std::to_string(cycle) + ".txt");
                 if (ofs) ofs << snapshot;
                 ofs.close();
             }
@@ -101,6 +120,11 @@ void RRScheduler::cpuCoreThread(int coreID) {
         if (proc->isFinished()) {
             proc->setState(Process::State::TERMINATED);
             proc->setEndTime(std::chrono::system_clock::now());
+            
+			// Deallocate memory for the process
+            static_cast<FlatMemoryAllocator&>(memoryAllocator).deallocate(proc->getAllocationIndex());
+			proc->setAllocationIndex(nullptr);
+            proc->setAllocation(false);
 
             // Ensure process is properly tracked
             if (processList.size() <= static_cast<size_t>(proc->getPID())) {

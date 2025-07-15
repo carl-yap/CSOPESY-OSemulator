@@ -76,6 +76,7 @@ public:
 	void startTickThread();
 	void schedulerStart();
 	void schedulerStop();
+	void cleanUp();
 
 	void setNumCores(int n) { numCores = n; }
 	void setBatchProcessFreq(int f) { batchProcessFreq = f; }

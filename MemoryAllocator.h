@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <string>
 #include <algorithm>
+#include <filesystem>
 
 #include "Process.h"
 
@@ -18,7 +19,6 @@ public:
 
 class FlatMemoryAllocator : public IMemoryAllocator {
 public:
-	FlatMemoryAllocator(size_t maximumSize);
 	FlatMemoryAllocator(size_t maximumSize, size_t memPerProcSize);
 
 	~FlatMemoryAllocator() {
