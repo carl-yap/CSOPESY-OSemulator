@@ -48,6 +48,7 @@ std::string FlatMemoryAllocator::visualizeMemory() {
     std::vector<std::tuple<size_t, int>> usedBlocks; // index, pid
 
     for (const auto& entry : processMap) {
+		if (entry.second == -1) continue; // Skip unallocated blocks
         usedBlocks.push_back({ entry.first, entry.second });
     }
 
