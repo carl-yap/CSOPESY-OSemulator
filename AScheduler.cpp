@@ -97,9 +97,9 @@ void Scheduler::schedulerStart() {
     startTickThread();
 
     // Start scheduler and cores
-    // std::thread(&Scheduler::schedulerThread, this).detach();
-    for (int i = 0; i < numCores; ++i)
-        std::thread(&Scheduler::cpuCoreThread, this, i).detach();
+    //std::thread(&Scheduler::schedulerThread, this).detach();
+    //for (int i = 0; i < numCores; ++i)
+    //    std::thread(&Scheduler::cpuCoreThread, this, i).detach();
 
     // Preload initial processes immediately (use unique ID range)
     for (int i = 0; i < numCores * 0; ++i) {

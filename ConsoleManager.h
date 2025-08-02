@@ -16,6 +16,7 @@ public:
     void init();  // Initialize main console
     void showMainConsole();  // Return to main menu
     void openScreen(const std::string& name, bool resume);  // Open/resume process screen
+	void customScreen(const std::string& name, const std::vector<std::vector<std::string>> commands); // Open custom process with command
     void openMarquee(); // startup the marquee console
 
     void setRunStatus(bool running);

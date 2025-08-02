@@ -28,6 +28,9 @@ void ProcessScheduler::init() {
 	
     // scheduler->schedulerStart();
     std::thread(&Scheduler::schedulerThread, scheduler).detach();
+    for (int i = 0; i < numCPU; ++i) {
+        std::thread(&Scheduler::cpuCoreThread, scheduler, i).detach();
+    }
 }
 
 void ProcessScheduler::showProcessList() const {

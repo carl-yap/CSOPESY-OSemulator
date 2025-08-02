@@ -21,6 +21,10 @@ void Process::generateInstructionsBetween(int min, int max) {
 	}
 }
 
+void Process::setCustomInstructions(CommandList cmds) {
+	this->instructions = std::move(cmds);
+}
+
 /*============== GETTERS ================*/
 Process::State Process::getState() const {
 	return this->state;
@@ -62,6 +66,13 @@ size_t Process::getMemoryRequired() const {
 	return this->memoryRequired;
 }
 
+std::shared_ptr<SymbolTable> Process::getSymbolTable() {
+	if (!symbolTable) {
+		symbolTable = std::make_shared<SymbolTable>();
+	}
+	return symbolTable;
+}
+
 /*============== SETTERS ================*/
 void Process::setState(State newState) {
 	this->state = newState;
@@ -77,7 +88,12 @@ void Process::setStartTime(TimePoint startTime) {
 
 /*============== SUBROUTINES ================*/
 void Process::executeCurrentCommand() const {
-	this->instructions[this->programCounter]->execute();
+	std::shared_ptr<ICommand> currentCommand = this->instructions[this->programCounter];
+
+	currentCommand->execute();
+	if (currentCommand->getCommandType() == ICommand::PRINT) {
+		std::cout << currentCommand->getOutput() << std::endl;
+	}
 }
 
 void Process::moveToNextLine() {

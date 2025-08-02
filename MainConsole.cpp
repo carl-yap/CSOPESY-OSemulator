@@ -73,8 +73,85 @@ Console::String MainConsole::toLower(const String& str) {
 }
 
 std::vector<std::string> MainConsole::tokenizeString(const String& input) {
-    std::istringstream stream(input);
-    return {std::istream_iterator<String>(stream), std::istream_iterator<String>()};
+    std::vector<std::string> tokens;
+    std::string token;
+    bool inQuotes = false;
+    bool escapeNext = false;
+
+    for (size_t i = 0; i < input.size(); ++i) {
+        char c = input[i];
+        if (inQuotes) {
+            if (c == '"' and !escapeNext) { // end quote mark
+                inQuotes = false;
+                tokens.push_back(token);
+                token.clear();
+			}
+			else if (c == '\\' && !escapeNext) { // handle escape character
+                escapeNext = true;
+            } 
+            else {
+                token += c;
+                if (escapeNext) { escapeNext = false; }
+            }
+        } else {
+            if (std::isspace(c)) {
+                if (!token.empty()) {
+                    tokens.push_back(token);
+                    token.clear();
+                }
+			}
+			else if (c == '"') { // start quote mark
+                inQuotes = true;
+            } 
+            else 
+            {
+                token += c;
+            }
+        }
+    }
+
+	if (!token.empty()) { tokens.push_back(token); } // Residual characters after last space
+    return tokens;
+}
+
+std::vector<std::vector<std::string>> MainConsole::tokenizeCustomCommands(const String& commands) {
+    std::vector<std::vector<std::string>> result;
+    std::istringstream commandStream(commands);
+    String segment;
+
+    // Split by ';'
+    while (std::getline(commandStream, segment, ';')) {
+        std::vector<std::string> tokens;
+        String token;
+        std::istringstream tokenStream(segment);
+
+        // Tokenize by spaces and parentheses
+        char c;
+        while (tokenStream.get(c)) {
+            if (std::isspace(c) || c == '(' || c == ')') {
+                if (!token.empty()) {
+                    tokens.push_back(token);
+                    token.clear();
+                }
+                if (c == '(' || c == ')') {
+                    tokens.push_back(String(1, c));
+                }
+            } else {
+                token += c;
+            }
+        }
+        if (!token.empty()) {
+            tokens.push_back(token);
+        }
+        // Remove empty tokens
+        tokens.erase(std::remove_if(tokens.begin(), tokens.end(),
+            [](const std::string& s) { return s.empty(); }), tokens.end());
+
+        if (!tokens.empty()) {
+            result.push_back(tokens);
+        }
+    }
+    return result;
 }
 
 void MainConsole::handleInitialize() {
@@ -82,6 +159,7 @@ void MainConsole::handleInitialize() {
 }
 
 void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
+    String name = "empty";
     bool resume = false;
 
     switch (commandTokens.size()) {
@@ -101,10 +179,26 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
             break;
         }
         resume = (commandTokens[1] == "-r");
-        ConsoleManager::getInstance().openScreen(commandTokens[2], resume);
+		name = commandTokens[2];
+        ConsoleManager::getInstance().openScreen(name, resume);
+        return;
+    case 4:
+        if (commandTokens[1] == "-c") {
+            name = commandTokens[2];
+            std::vector<std::vector<String>> commands = tokenizeCustomCommands(commandTokens[3]);
+            for (const auto& cmd : commands) {
+                if (cmd.empty()) continue; // Skip empty commands
+                std::string cmdStr = cmd[0];
+                for (size_t i = 1; i < cmd.size(); ++i) {
+                    cmdStr += " " + cmd[i];
+                }
+                // std::cout << "Found command: " << cmdStr << std::endl;
+            }
+            ConsoleManager::getInstance().customScreen(name, commands);
+        }
         return;
     default:
-        std::cout << "Too many parameters provided. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+        std::cout << "Too many parameters provided. The options for 'screen' are <-r|-s|-c>." << std::endl;
 		return;
     }
 }

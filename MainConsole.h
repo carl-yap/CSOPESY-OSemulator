@@ -17,6 +17,7 @@ private:
 	String  command;
     String  toLower(const String& str);
     std::vector<String> tokenizeString(const String& input);
+	std::vector<std::vector<String>> tokenizeCustomCommands(const String& commands);
     
     void handleInitialize();
     void handleScreen(std::vector<String> commandTokens);

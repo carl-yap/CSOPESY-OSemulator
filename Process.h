@@ -19,8 +19,10 @@ public:
 
 	typedef std::vector<std::shared_ptr<ICommand>> CommandList;
 	typedef std::chrono::system_clock::time_point TimePoint;
+	typedef std::shared_ptr<SymbolTable> TablePtr;
 	Process(int id, const std::string& n, int minIns, int maxIns, size_t memPerProc);
 	void generateInstructionsBetween(int min, int max);
+	void setCustomInstructions(CommandList cmds);
 
 	State		getState() const;
 	int			getPID() const;
@@ -31,6 +33,7 @@ public:
 	TimePoint	getEndTime() const;
 	TimePoint	getArrivalTime() const;
 	size_t		getMemoryRequired() const;
+	TablePtr    getSymbolTable();
 	
 	void        setAllocationIndex(void* i) { allocIndex = i; }
 	void*       getAllocationIndex() { return allocIndex; }
@@ -68,8 +71,9 @@ private:
 	CommandList instructions;
 	int programCounter;
 
-	// Symbol table [Work in Progress]
-	// SymbolTable symbolTable;
+	// Symbol table
+	TablePtr symbolTable;
+	std::unordered_map<uintptr_t, std::string> variables;
 
 	// TODO: Stack
 	// TODO: Heap

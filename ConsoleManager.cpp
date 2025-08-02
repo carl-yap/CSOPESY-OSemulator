@@ -61,6 +61,24 @@ void ConsoleManager::openScreen(const std::string& name, bool resume) {
     }
 }
 
+void ConsoleManager::customScreen(const std::string& name, const std::vector<std::vector<std::string>> commands) {
+    // Check if the screen name exists in our consoles map
+    auto it = consoles.find(name);
+    
+    if (it != consoles.end()) {
+        std::cerr << "Process '" << name << "' already exists. Use resume to continue." << std::endl;
+        return;
+    }
+
+    // Screen doesn't exist, start a new one with custom commands
+    auto newProcessConsole = std::make_shared<ProcessConsole>(name);
+    newProcessConsole->setCustomCommands(commands);
+
+    consoles[name] = newProcessConsole;
+
+	currentConsole = newProcessConsole;
+}
+
 void ConsoleManager::openMarquee() {
     clearScreen();
     currentConsole = std::make_unique<MarqueeConsole>();
