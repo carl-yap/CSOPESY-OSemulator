@@ -19,11 +19,16 @@ void* PagingAllocator::allocate(std::shared_ptr<Process> process) {
 
 	// Allocate frames for the process
 	size_t frameIndex = allocateFrames(requiredFrames, processID);
+
+	// Increment paging in counter
+	numPagedIn += requiredFrames;
+
 	return reinterpret_cast<void*>(frameIndex);
 }
 
 void PagingAllocator::deallocate(std::shared_ptr<Process> process) {
 	size_t processID = process->getPID();
+	size_t deallocatedFrames = 0;
 
 	// Find and free all frames allocated to this process
 	auto it = std::find_if(frameMap.begin(), frameMap.end(),
@@ -32,10 +37,15 @@ void PagingAllocator::deallocate(std::shared_ptr<Process> process) {
 	while (it != frameMap.end()) {
 		size_t frameIndex = it->first;
 		deallocateFrames(1, frameIndex);
+		deallocatedFrames++;
 		it = std::find_if(frameMap.begin(), frameMap.end(),
 			[processID](const auto& entry) { return entry.second == processID; });
 	}
+
+	// Increment paging out counter
+	numPagedOut += deallocatedFrames;
 }
+
 
 std::string PagingAllocator::visualizeMemory() {
 	std::ostringstream oss;

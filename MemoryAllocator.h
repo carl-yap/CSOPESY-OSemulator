@@ -55,11 +55,22 @@ public:
 	void deallocate(std::shared_ptr<Process> process) override;
 	std::string visualizeMemory() override;
 
+	// Add these new methods for vmstat
+	size_t getUsedFrames() const { return frameMap.size(); }
+	size_t getTotalFrames() const { return numFrames; }
+	size_t getFreeFrames() const { return freeFrameList.size(); }
+	size_t getNumPagedIn() const { return numPagedIn; }
+	size_t getNumPagedOut() const { return numPagedOut; }
+
 private:
 	size_t maxMemorySize;
 	size_t numFrames;
-	std::unordered_map<size_t, size_t> frameMap; 
+	std::unordered_map<size_t, size_t> frameMap;
 	std::vector<size_t> freeFrameList;
+
+	// Add paging counters
+	mutable std::atomic<size_t> numPagedIn{ 0 };
+	mutable std::atomic<size_t> numPagedOut{ 0 };
 
 	size_t allocateFrames(size_t numFrames, size_t processID);
 	void deallocateFrames(size_t numFrames, size_t frameIndex);
