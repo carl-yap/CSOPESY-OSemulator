@@ -1,4 +1,5 @@
 #include "MemoryAllocator.h"
+#include "VmStatReporter.h"
 
 FlatMemoryAllocator::FlatMemoryAllocator(size_t maximumSize, size_t memPerProcSize)
     : maxSize(maximumSize), allocatedSize(0), memPerProc(memPerProcSize) {
@@ -115,3 +116,4 @@ void FlatMemoryAllocator::deallocateAt(size_t index) {
 	}
     processMap[index] = -1;
 }
+

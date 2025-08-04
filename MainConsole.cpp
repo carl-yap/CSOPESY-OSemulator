@@ -1,6 +1,7 @@
 #include "MainConsole.h"
 #include "ConsoleManager.h"
 #include "ProcessScheduler.h"
+#include "VmStatReporter.h"
 
 MainConsole::MainConsole() : Console("MAIN_CONSOLE") {
     this->command = "";
@@ -56,6 +57,9 @@ void MainConsole::process() {
         }
         else if (lowerCommand == "process-smi") {
             ProcessScheduler::getInstance().showProcessList();
+        }
+        else if (lowerCommand == "vmstat") {
+            VmStatReporter::getInstance().displayStats();
         }
         else {
             std::cout << "Unknown command. Available commands: initialize, marquee, screen, scheduler-test, scheduler-stop, report-util, clear, exit" << std::endl;

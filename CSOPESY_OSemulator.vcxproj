@@ -138,6 +138,7 @@
     <ClCompile Include="ProcessScheduler.cpp" />
     <ClCompile Include="RRScheduler.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
+    <ClCompile Include="VmStatReporter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AConsole.h" />
@@ -154,6 +155,7 @@
     <ClInclude Include="ProcessScheduler.h" />
     <ClInclude Include="RRScheduler.h" />
     <ClInclude Include="SymbolTable.h" />
+    <ClInclude Include="VmStatReporter.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="config.txt" />
