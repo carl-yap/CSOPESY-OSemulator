@@ -43,9 +43,7 @@ void FCFSScheduler::schedulerThread() {
 			});
 
 		// Assign the next process in the RQ to a CPU core
-		static int lastAssignedCore = 0;
-		for (int i = 0; i < numCores && !readyQueue.empty(); ++i) {
-			int core = (lastAssignedCore + i) % numCores;
+		for (int core = 0; core < numCores && !readyQueue.empty(); ++core) {
 			if (!coreBusy[core].get()->load()) { // if the core is not busy
 				std::shared_ptr<Process> proc = readyQueue.front();
 				readyQueue.pop();
@@ -61,7 +59,6 @@ void FCFSScheduler::schedulerThread() {
 					}
 					else { // it found a block open
 						proc->setAllocation(true);
-						//proc->setAllocationIndex(memPtr);
 					}
 				}
 
@@ -97,11 +94,10 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 
 		lock.unlock(); // Unlock before processing to allow other cores to run
 
-		// Execute process until completion (FCFS doesn't preempt)
+		// Execute process until completion 
 		int instructionsExecuted = 0;
 		while (!proc->isFinished()) {
 			proc->executeCurrentCommand();
-			// After proc->executeCurrentCommand();
 			proc->addLog(coreID, "Hello world from " + proc->getName());
 			proc->moveToNextLine();
 			instructionsExecuted++;

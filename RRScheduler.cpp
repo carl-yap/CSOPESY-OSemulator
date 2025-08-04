@@ -6,24 +6,21 @@ void RRScheduler::addProcess(std::shared_ptr<Process> process) {
         return;
     }
 
-    // Store process in processList for screen -ls functionality (same as FCFS)
     if (processList.size() <= static_cast<size_t>(process->getPID()))
         processList.resize(process->getPID() + 1);
     processList[process->getPID()] = process;
 
     // SET PID before allocating
     static_cast<PagingAllocator&>(memoryAllocator);
-    void* memPtr = memoryAllocator.allocate(process); // assumes memPerProc is stored in this class
+    void* memPtr = memoryAllocator.allocate(process); 
 
     if (!memPtr) {
-        //std::cout << "[addProcess] Memory full for " << process->getName() << ", moving to back of queue\n";
         std::lock_guard<std::mutex> lock(queueMutex);
         readyQueue.push(process); // memory full → retry later
         return;
     }
     else { // mark process as allocated 
         process->setAllocation(true); 
-        //process->setAllocationIndex(memPtr);
     } 
 
     std::lock_guard<std::mutex> lock(queueMutex);
@@ -59,7 +56,6 @@ void RRScheduler::schedulerThread() {
                     }
                     else { // it found a block open
 						proc->setAllocation(true); 
-						//proc->setAllocationIndex(memPtr); 
                     }
                 }
 
