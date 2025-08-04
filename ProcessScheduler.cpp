@@ -10,7 +10,7 @@ void ProcessScheduler::init() {
     memoryAllocator = std::make_shared<FlatMemoryAllocator>(maxOverallMem, memPerProc);
 
 	if (type == "fcfs") {
-        scheduler = std::make_shared<FCFSScheduler>(numCPU, *memoryAllocator);
+        scheduler = std::make_shared<FCFSScheduler>(numCPU, *memoryAllocator, memPerProc, quantumCycles);
 	}
 	else if (type == "rr") {
         scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles, *memoryAllocator, memPerProc);
