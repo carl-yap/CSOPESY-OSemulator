@@ -91,5 +91,8 @@ public:
 	void setMaxMemPerProc(size_t m) { maxMemPerProc = m; }
 
 	std::vector<std::shared_ptr<Process>> processList;
+
+	uint64_t getTickCount() const { return tickCount.load(); }
+	const std::vector<std::unique_ptr<std::atomic_bool>>& getCoreBusy() const { return coreBusy; }
 };
 

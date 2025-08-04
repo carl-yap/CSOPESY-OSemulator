@@ -57,8 +57,11 @@ void MainConsole::process() {
         else if (lowerCommand == "process-smi") {
             ProcessScheduler::getInstance().showProcessList();
         }
+        else if (lowerCommand == "vmstat") {
+            ProcessScheduler::getInstance().showVMStat();
+        }
         else {
-            std::cout << "Unknown command. Available commands: initialize, marquee, screen, scheduler-test, scheduler-stop, report-util, clear, exit" << std::endl;
+            std::cout << "Unknown command. Available commands: initialize, marquee, screen, scheduler-start, scheduler-stop, report-util, process-smi, vmstat, clear, exit" << std::endl;
         }
     }
     ConsoleManager::getInstance().clearScreen();

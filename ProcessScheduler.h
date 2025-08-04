@@ -39,6 +39,8 @@ public:
 
 	void loadConfigFromFile(const std::string& filename);
 
+	void showVMStat() const;
+
 private:
 	ProcessScheduler() {};
 	std::shared_ptr<Scheduler> scheduler = nullptr;

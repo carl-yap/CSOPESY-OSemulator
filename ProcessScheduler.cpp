@@ -182,3 +182,90 @@ void ProcessScheduler::exit() {
 bool ProcessScheduler::isValidMemorySize(size_t size) const {
     return size <= maxOverallMem && size <= maxMemPerProc;
 }
+
+void ProcessScheduler::showVMStat() const {
+    if (!scheduler || !memoryAllocator) {
+        std::cerr << "vmstat error: No scheduler or memory allocator initialized." << std::endl;
+        return;
+    }
+
+    // Calculate memory statistics
+    size_t totalMemory = maxOverallMem;
+    size_t usedMemory = 0;
+    size_t freeMemory = totalMemory;
+    
+    // Count active processes and calculate used memory
+    int activeProcesses = 0;
+    int inactiveProcesses = 0;
+    
+    for (const auto& process : scheduler->processList) {
+        if (!process) continue;
+        
+        if (process->getState() == Process::State::RUNNING || 
+            process->getState() == Process::State::READY ||
+            process->getState() == Process::State::WAITING) {
+            activeProcesses++;
+            if (process->isAllocated()) {
+                usedMemory += process->getMemoryRequired();
+            }
+        } else {
+            inactiveProcesses++;
+        }
+    }
+    
+    freeMemory = totalMemory - usedMemory;
+    
+    // Calculate CPU tick statistics
+    uint64_t totalCpuTicks = scheduler->getTickCount() * numCPU;
+    uint64_t activeCpuTicks = 0;
+    uint64_t idleCpuTicks = 0;
+    
+    // Count active CPU cores
+    int activeCores = 0;
+    const auto& coreBusyFlags = scheduler->getCoreBusy();
+    for (int i = 0; i < numCPU; ++i) {
+        if (i < static_cast<int>(coreBusyFlags.size()) && 
+            coreBusyFlags[i] && 
+            coreBusyFlags[i]->load()) {
+            activeCores++;
+        }
+    }
+    
+    // Estimate active vs idle ticks (simplified calculation)
+    activeCpuTicks = scheduler->getTickCount() * activeCores;
+    idleCpuTicks = totalCpuTicks - activeCpuTicks;
+    
+    // Placeholder values for paging (as requested)
+    size_t numPagedIn = 0;   // Placeholder
+    size_t numPagedOut = 0;  // Placeholder
+    
+    // Display vmstat information
+    std::cout << "=== VMSTAT ===" << std::endl;
+    std::cout << std::endl;
+    
+    // Process information
+    std::cout << "Active processes: " << activeProcesses << std::endl;
+    std::cout << "Inactive processes: " << inactiveProcesses << std::endl;
+    std::cout << std::endl;
+    
+    // Memory information  
+    std::cout << "Total memory: " << totalMemory << " bytes" << std::endl;
+    std::cout << "Used memory: " << usedMemory << " bytes" << std::endl;
+    std::cout << "Free memory: " << freeMemory << " bytes" << std::endl;
+    std::cout << std::endl;
+    
+    // CPU tick information
+    std::cout << "Idle cpu ticks: " << idleCpuTicks << std::endl;
+    std::cout << "Active cpu ticks: " << activeCpuTicks << std::endl; 
+    std::cout << "Total cpu ticks: " << totalCpuTicks << std::endl;
+    std::cout << std::endl;
+    
+    // Paging information (placeholder values)
+    std::cout << "Num paged in: " << numPagedIn << std::endl;
+    std::cout << "Num paged out: " << numPagedOut << std::endl;
+    std::cout << std::endl;
+    
+    // Memory visualization
+    std::cout << "Memory visualization:" << std::endl;
+    std::cout << memoryAllocator->visualizeMemory() << std::endl;
+}
