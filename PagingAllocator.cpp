@@ -1,7 +1,7 @@
 #include "MemoryAllocator.h"
 
-PagingAllocator::PagingAllocator(size_t maxMemorySize) 
-	: maxMemorySize(maxMemorySize), numFrames(maxMemorySize) {
+PagingAllocator::PagingAllocator(size_t maxMemorySize, size_t numFrames) 
+	: maxMemorySize(maxMemorySize), numFrames(numFrames) {
 	// initialize free frame list
 	for (size_t i = 0; i < numFrames; ++i) {
 		freeFrameList.push_back(i);

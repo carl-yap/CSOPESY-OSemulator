@@ -7,7 +7,8 @@ ProcessScheduler& ProcessScheduler::getInstance() {
 
 void ProcessScheduler::init() {
     // MCO2 requirement
-    memoryAllocator = std::make_shared<PagingAllocator>(maxOverallMem);
+	size_t numFrames = maxOverallMem / memPerFrame;
+    memoryAllocator = std::make_shared<PagingAllocator>(maxOverallMem, numFrames);
 
 	if (type == "fcfs") {
         scheduler = std::make_shared<FCFSScheduler>(numCPU, *memoryAllocator);
@@ -86,12 +87,11 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
             // Process does not exist, create a new one
             int id = static_cast<int>(scheduler->processList.size()) + 1;
 			size_t requiredMem = memSize > 0 ? memSize : minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
-            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, requiredMem);
+			size_t numPages = requiredMem / this->memPerFrame;
+            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, requiredMem, numPages);
             p->setState(Process::State::READY);
             // Set startTime to now for new process
             p->setStartTime(std::chrono::system_clock::now());
-            // Set required memory pages
-			p->setNumPages(requiredMem / this->memPerFrame);
             scheduler->processList.push_back(p); // Add to list of procs
             scheduler->addProcess(p); // send to RQ
             return p;

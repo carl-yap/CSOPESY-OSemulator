@@ -1,14 +1,15 @@
 #include "Process.h"
 
 
-Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t memoryRequired)
-	: pid(id), name(name), state(State::NEW), programCounter(0), memoryRequired(memoryRequired)
+Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t memoryRequired, size_t numPages)
+	: pid(id), name(name), state(State::NEW), programCounter(0), memoryRequired(memoryRequired), numPages(numPages)
 {
 	getSymbolTable(); 
 	generateInstructionsBetween(minIns, maxIns);
 	arrivalTime = std::chrono::system_clock::now();
 	
 	allocated = false; // Initially not allocated
+	pageTable.reserve(numPages);
 }
 
 

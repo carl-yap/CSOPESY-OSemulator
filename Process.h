@@ -20,7 +20,7 @@ public:
 	typedef std::vector<std::shared_ptr<ICommand>> CommandList;
 	typedef std::chrono::system_clock::time_point TimePoint;
 	typedef std::shared_ptr<SymbolTable> TablePtr;
-	Process(int id, const std::string& n, int minIns, int maxIns, size_t memPerProc);
+	Process(int id, const std::string& n, int minIns, int maxIns, size_t memoryRequired, size_t numPages);
 	void generateInstructionsBetween(int min, int max);
 	void setCustomInstructions(CommandList cmds);
 
@@ -40,7 +40,7 @@ public:
 	void        setAllocation(bool a) { allocated = a; }
 	bool		isAllocated() { return allocated; }
 
-	void        setNumPages(size_t n) { numPages = n; }
+	//void        setNumPages(size_t n) { numPages = n; }
 	size_t      getNumPages() const { return numPages; }
 
 	void setState(State newState);
@@ -95,4 +95,5 @@ private:
 	//void*	allocIndex;
 	bool	allocated;
 	size_t  numPages;
+	std::unordered_map<void*, bool> pageTable;
 };

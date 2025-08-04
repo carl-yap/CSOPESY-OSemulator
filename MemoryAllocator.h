@@ -49,7 +49,7 @@ private:
 
 class PagingAllocator : public IMemoryAllocator {
 public:
-	PagingAllocator(size_t maxMemorySize);
+	PagingAllocator(size_t maxMemorySize, size_t numFrames);
 
 	void* allocate(std::shared_ptr<Process> process) override;
 	void deallocate(std::shared_ptr<Process> process) override;
