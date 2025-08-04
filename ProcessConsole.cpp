@@ -2,7 +2,15 @@
 #include "ConsoleManager.h"
 
 ProcessConsole::ProcessConsole(const String pName) : Console("PROCESS_CONSOLE") {
-	this->p = ProcessScheduler::getInstance().fetchProcessByName(pName);
+	this->p = ProcessScheduler::getInstance().fetchProcessByName(pName, 0);
+}
+
+ProcessConsole::ProcessConsole(const String pName, size_t memSize) : Console("PROCESS_CONSOLE") {
+	this->p = ProcessScheduler::getInstance().fetchProcessByName(pName, memSize);
+	if (!p) {
+		std::cerr << "Error: Process '" << pName << "' not found." << std::endl;
+		return;
+	}
 }
 
 void ProcessConsole::onEnabled() { /* no-op */ }

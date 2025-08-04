@@ -21,7 +21,7 @@ public:
 	void stop();
 	void exit(); // cleanup resources & threads
 
-	std::shared_ptr<Process> fetchProcessByName(const std::string& name);
+	std::shared_ptr<Process> fetchProcessByName(const std::string& name, size_t memSize);
 
 	void setNumCPU(int n) { numCPU = n; }
 	void setSchedulerType(const std::string& s) { type = s; }
@@ -32,14 +32,17 @@ public:
 	void setDelayPerExec(int d) { delayPerExec = d; }
 	void setMaxOverallMem(size_t m) { maxOverallMem = m; }
 	void setMemPerFrame(size_t m) { memPerFrame = m; }
-	void setMemPerProc(size_t m) { memPerProc = m; }
+	void setMinMemPerProc(size_t m) { minMemPerProc = m; }
+	void setMaxMemPerProc(size_t m) { maxMemPerProc = m; }
+
+	bool isValidMemorySize(size_t size) const;
 
 	void loadConfigFromFile(const std::string& filename);
 
 private:
 	ProcessScheduler() {};
 	std::shared_ptr<Scheduler> scheduler = nullptr;
-	std::shared_ptr<FlatMemoryAllocator> memoryAllocator;
+	std::shared_ptr<PagingAllocator> memoryAllocator;
 
 	// Scheduler parameters (default)
 	int			numCPU			= 4;
@@ -51,5 +54,6 @@ private:
 	int			delayPerExec	= 0;
 	size_t      maxOverallMem   = 16 * 1024;
 	size_t      memPerFrame     = 16;
-	size_t		memPerProc		= 4096;
+	size_t		minMemPerProc	= 4096;
+	size_t		maxMemPerProc   = 8192;
 };

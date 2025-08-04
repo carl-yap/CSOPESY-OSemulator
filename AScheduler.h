@@ -28,8 +28,10 @@ protected:
 	int minIns = 10;
 	int maxIns = 20;
 	int delayPerExec = 0;
-	int maxOverallMemory = 100; 
-	size_t memPerProc = 4096;
+	size_t maxOverallMemory = 100; 
+	size_t memPerFrame = 4096;
+	size_t minMemPerProc = 1024; 
+	size_t maxMemPerProc = 8192; 
 
 	inline static std::atomic_uint64_t tickCount{ 0 };         // CPU tick counter
 	inline static std::atomic_bool tickThreadRunning{ false };  // Only one tick thread
@@ -84,6 +86,9 @@ public:
 	void setMaxIns(int m) { maxIns = m; }
 	void setDelayPerExec(int d) { delayPerExec = d; }
 	void setMaxOverallMemory(int m) { maxOverallMemory = m; }
+	void setMemPerFrame(size_t m) { memPerFrame = m; }
+	void setMinMemPerProc(size_t m) { minMemPerProc = m; }
+	void setMaxMemPerProc(size_t m) { maxMemPerProc = m; }
 
 	std::vector<std::shared_ptr<Process>> processList;
 };

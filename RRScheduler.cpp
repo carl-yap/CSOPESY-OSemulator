@@ -12,8 +12,8 @@ void RRScheduler::addProcess(std::shared_ptr<Process> process) {
     processList[process->getPID()] = process;
 
     // SET PID before allocating
-    static_cast<FlatMemoryAllocator&>(memoryAllocator).setCurrentPID(process->getPID());
-    void* memPtr = memoryAllocator.allocate(memPerProc); // assumes memPerProc is stored in this class
+    static_cast<PagingAllocator&>(memoryAllocator);
+    void* memPtr = memoryAllocator.allocate(process); // assumes memPerProc is stored in this class
 
     if (!memPtr) {
         //std::cout << "[addProcess] Memory full for " << process->getName() << ", moving to back of queue\n";
@@ -23,7 +23,7 @@ void RRScheduler::addProcess(std::shared_ptr<Process> process) {
     }
     else { // mark process as allocated 
         process->setAllocation(true); 
-        process->setAllocationIndex(memPtr);
+        //process->setAllocationIndex(memPtr);
     } 
 
     std::lock_guard<std::mutex> lock(queueMutex);
@@ -50,8 +50,8 @@ void RRScheduler::schedulerThread() {
                 
                 if (!proc->isAllocated()) { 
 					// Attempt to allocate memory for the process
-                    static_cast<FlatMemoryAllocator&>(memoryAllocator).setCurrentPID(proc->getPID());
-                    void* memPtr = memoryAllocator.allocate(memPerProc);
+                    static_cast<PagingAllocator&>(memoryAllocator);
+                    void* memPtr = memoryAllocator.allocate(proc);
 
 					if (!memPtr) { // still no memory available
                         readyQueue.push(proc); // retry later
@@ -59,7 +59,7 @@ void RRScheduler::schedulerThread() {
                     }
                     else { // it found a block open
 						proc->setAllocation(true); 
-						proc->setAllocationIndex(memPtr); 
+						//proc->setAllocationIndex(memPtr); 
                     }
                 }
 
@@ -122,8 +122,8 @@ void RRScheduler::cpuCoreThread(int coreID) {
             proc->setEndTime(std::chrono::system_clock::now());
             
 			// Deallocate memory for the process
-            static_cast<FlatMemoryAllocator&>(memoryAllocator).deallocate(proc->getAllocationIndex());
-			proc->setAllocationIndex(nullptr);
+            static_cast<PagingAllocator&>(memoryAllocator).deallocate(proc);
+			//proc->setAllocationIndex(nullptr);
             proc->setAllocation(false);
 
             // Ensure process is properly tracked

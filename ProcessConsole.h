@@ -9,6 +9,7 @@
 class ProcessConsole : public Console {
 public:
 	ProcessConsole(const String pName);
+	ProcessConsole(const String pName, size_t memSize);
 
 	void onEnabled() override;
 	void display() const override;

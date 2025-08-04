@@ -133,6 +133,7 @@
     <ClCompile Include="MainLoop.cpp" />
     <ClCompile Include="MarqueeConsole.cpp" />
     <ClCompile Include="MarqueeWorkerThread.cpp" />
+    <ClCompile Include="PagingAllocator.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="ProcessConsole.cpp" />
     <ClCompile Include="ProcessScheduler.cpp" />

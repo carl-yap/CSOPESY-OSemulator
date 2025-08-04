@@ -12,8 +12,10 @@ void FCFSScheduler::addProcess(std::shared_ptr<Process> process) {
 	processList[process->getPID()] = process;
 
 	// SET PID before allocating
-	static_cast<FlatMemoryAllocator&>(memoryAllocator).setCurrentPID(process->getPID());
-	void* memPtr = memoryAllocator.allocate(memPerProc);
+	//static_cast<FlatMemoryAllocator&>(memoryAllocator).setCurrentPID(process->getPID());
+	//void* memPtr = memoryAllocator.allocate(memPerProc);
+	static_cast<PagingAllocator&>(memoryAllocator);
+	void* memPtr = memoryAllocator.allocate(process);
 
 	if (!memPtr) {
 		//std::cout << "[addProcess] Memory full for " << process->getName() << ", moving to back of queue\n";
@@ -23,7 +25,7 @@ void FCFSScheduler::addProcess(std::shared_ptr<Process> process) {
 	}
 	else { // mark process as allocated 
 		process->setAllocation(true);
-		process->setAllocationIndex(memPtr);
+		//process->setAllocationIndex(memPtr);
 	}
 
 	std::lock_guard<std::mutex> lock(queueMutex);
@@ -50,8 +52,8 @@ void FCFSScheduler::schedulerThread() {
 
 				if (!proc->isAllocated()) {
 					// Attempt to allocate memory for the process
-					static_cast<FlatMemoryAllocator&>(memoryAllocator).setCurrentPID(proc->getPID());
-					void* memPtr = memoryAllocator.allocate(memPerProc);
+					static_cast<PagingAllocator&>(memoryAllocator);
+					void* memPtr = memoryAllocator.allocate(proc);
 
 					if (!memPtr) { // still no memory available
 						readyQueue.push(proc); // retry later
@@ -59,7 +61,7 @@ void FCFSScheduler::schedulerThread() {
 					}
 					else { // it found a block open
 						proc->setAllocation(true);
-						proc->setAllocationIndex(memPtr);
+						//proc->setAllocationIndex(memPtr);
 					}
 				}
 
@@ -104,15 +106,6 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 			proc->moveToNextLine();
 			instructionsExecuted++;
 
-			// Generate memory snapshot every quantumCycles instructions
-			if (instructionsExecuted % quantumCycles == 0) {
-				std::string snapshot = memoryAllocator.visualizeMemory();
-				int cycle = static_cast<int>(tickCount.load()) / quantumCycles;
-				std::ofstream ofs("mem_snapshots/memory_stamp_" + std::to_string(cycle) + ".txt");
-				if (ofs) ofs << snapshot;
-				ofs.close();
-			}
-
 			if (delayPerExec > 0) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
 			}
@@ -124,8 +117,8 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 		proc->setEndTime(std::chrono::system_clock::now());
 
 		// Deallocate memory for the process
-		static_cast<FlatMemoryAllocator&>(memoryAllocator).deallocate(proc->getAllocationIndex());
-		proc->setAllocationIndex(nullptr);
+		static_cast<PagingAllocator&>(memoryAllocator).deallocate(proc);
+		//proc->setAllocationIndex(nullptr);
 		proc->setAllocation(false);
 
 		// Ensure process is properly tracked

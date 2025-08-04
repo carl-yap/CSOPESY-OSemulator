@@ -1,9 +1,10 @@
 #include "Process.h"
 
 
-Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t memPerProc)
-	: pid(id), name(name), state(State::NEW), programCounter(0), memoryRequired(memPerProc)
+Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t memoryRequired)
+	: pid(id), name(name), state(State::NEW), programCounter(0), memoryRequired(memoryRequired)
 {
+	getSymbolTable(); 
 	generateInstructionsBetween(minIns, maxIns);
 	arrivalTime = std::chrono::system_clock::now();
 	
@@ -13,11 +14,35 @@ Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t
 
 void Process::generateInstructionsBetween(int min, int max) {
 	int n = min + rand() % (max - min + 1);
+	std::vector<std::string> possibleCmds = { "SLEEP", "READ", "WRITE" };
+	std::vector<std::string> possibleVars = { "varA", "varB", "varC" };
 	this->instructions.resize(n);
 	for (int i = 0; i < n; ++i) {
 		// TODO: implement random instruction generation logic
+		int cmdType = rand() % possibleCmds.size();
 
-		this->instructions[i] = std::make_shared<SleepCommand>(this->pid, 100);
+		std::string varName;
+		uintptr_t address;
+		uint16_t value;
+
+		switch (cmdType) {
+			case 0: // SLEEP
+				this->instructions[i] = std::make_shared<SleepCommand>(this->pid, rand() % 1000 + 1);
+				break;
+			case 1: // READ
+				varName = possibleVars[rand() % possibleVars.size()];
+				address = static_cast<uintptr_t>(rand() % 1000); 
+				this->instructions[i] = std::make_shared<ReadCommand>(this->pid, getSymbolTable(), varName, address);
+				break;
+			case 2: // WRITE
+				varName = possibleVars[rand() % possibleVars.size()];
+				value = rand() % 100; // Random value to write
+				this->instructions[i] = std::make_shared<WriteCommand>(this->pid, getSymbolTable(), address, value);
+				break;
+			default: // Do Nothing
+				this->instructions[i] = std::make_shared<SleepCommand>(this->pid, 100);
+				break;
+		}
 	}
 }
 

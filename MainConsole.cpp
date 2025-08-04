@@ -180,7 +180,7 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
         }
         resume = (commandTokens[1] == "-r");
 		name = commandTokens[2];
-        ConsoleManager::getInstance().openScreen(name, resume);
+        ConsoleManager::getInstance().openScreen(name);
         return;
     case 4:
         if (commandTokens[1] == "-c") {
@@ -195,6 +195,23 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
                 // std::cout << "Found command: " << cmdStr << std::endl;
             }
             ConsoleManager::getInstance().customScreen(name, commands);
+        }
+        else if (commandTokens[1] == "-s") {
+            size_t requiredMem = 0;  
+            try {  
+                requiredMem = std::stoull(commandTokens[3]);  
+            } catch (const std::exception& e) {  
+                std::cerr << "Exception caught: " << e.what() << std::endl;  
+                return;  
+            } 
+            if (!ProcessScheduler::getInstance().isValidMemorySize(requiredMem)) {
+				std::cerr << "Memory size out of range. Please enter a smaller number." << std::endl;
+                return;
+            }
+            else {
+				ConsoleManager::getInstance().startScreen(name, requiredMem);
+                return;
+            }
         }
         return;
     default:

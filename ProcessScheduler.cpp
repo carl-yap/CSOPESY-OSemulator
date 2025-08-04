@@ -7,13 +7,13 @@ ProcessScheduler& ProcessScheduler::getInstance() {
 
 void ProcessScheduler::init() {
     // MCO2 requirement
-    memoryAllocator = std::make_shared<FlatMemoryAllocator>(maxOverallMem, memPerProc);
+    memoryAllocator = std::make_shared<PagingAllocator>(maxOverallMem);
 
 	if (type == "fcfs") {
-        scheduler = std::make_shared<FCFSScheduler>(numCPU, *memoryAllocator, memPerProc, quantumCycles);
+        scheduler = std::make_shared<FCFSScheduler>(numCPU, *memoryAllocator);
 	}
 	else if (type == "rr") {
-        scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles, *memoryAllocator, memPerProc);
+        scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles, *memoryAllocator);
 	}
 	else {
 		throw std::runtime_error("Unknown scheduler type: " + type);
@@ -25,6 +25,9 @@ void ProcessScheduler::init() {
     scheduler->setMaxIns(maxIns);
     scheduler->setDelayPerExec(delayPerExec);
     scheduler->setMaxOverallMemory(static_cast<int>(maxOverallMem));
+	scheduler->setMemPerFrame(memPerFrame);
+	scheduler->setMinMemPerProc(minMemPerProc);
+	scheduler->setMaxMemPerProc(maxMemPerProc);
 	
     // scheduler->schedulerStart();
     std::thread(&Scheduler::schedulerThread, scheduler).detach();
@@ -69,7 +72,7 @@ void ProcessScheduler::makeReportUtil() const {
     }
 }
 
-std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string& name) {
+std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string& name, size_t memSize) {
     bool procExists = false;
 
     if (scheduler) {
@@ -82,10 +85,13 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
         if (!procExists) {
             // Process does not exist, create a new one
             int id = static_cast<int>(scheduler->processList.size()) + 1;
-            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, this->memPerProc);
+			size_t requiredMem = memSize > 0 ? memSize : minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
+            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, requiredMem);
             p->setState(Process::State::READY);
             // Set startTime to now for new process
             p->setStartTime(std::chrono::system_clock::now());
+            // Set required memory pages
+			p->setNumPages(requiredMem / this->memPerFrame);
             scheduler->processList.push_back(p); // Add to list of procs
             scheduler->addProcess(p); // send to RQ
             return p;
@@ -130,8 +136,11 @@ void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
         else if (key == "mem-per-frame") {
 			config >> memPerFrame;
         }
-        else if (key == "mem-per-proc") {
-            config >> memPerProc;
+        else if (key == "min-mem-per-proc") {
+            config >> minMemPerProc;
+        }
+        else if (key == "max-mem-per-proc") {
+			config >> maxMemPerProc;
         }
         else {
             std::string unknownValue;
@@ -151,7 +160,8 @@ void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
         << "  delay-per-exec: " << delayPerExec << "\n"
 		<< "  max-overall-mem: " << maxOverallMem << "\n"
 		<< "  mem-per-frame: " << memPerFrame << "\n"
-        << "  mem-per-proc: " << memPerProc << "\n";
+        << "  min-mem-per-proc: " << minMemPerProc << "\n"
+        << "  max-mem-per-proc: " << maxMemPerProc << "\n";
 }
 
 void ProcessScheduler::start() {
@@ -167,4 +177,8 @@ void ProcessScheduler::stop() {
 
 void ProcessScheduler::exit() {
     if (scheduler) scheduler->cleanUp();
+}
+
+bool ProcessScheduler::isValidMemorySize(size_t size) const {
+    return size <= maxOverallMem && size <= maxMemPerProc;
 }

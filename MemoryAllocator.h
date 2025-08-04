@@ -12,8 +12,8 @@
 // interface class
 class IMemoryAllocator {
 public:
-	virtual void* allocate(size_t size) = 0;
-	virtual void deallocate(void* ptr) = 0;
+	virtual void* allocate(std::shared_ptr<Process> process) = 0;
+	virtual void deallocate(std::shared_ptr<Process> process) = 0;
 	virtual std::string visualizeMemory() = 0;
 };
 
@@ -25,8 +25,8 @@ public:
 		memory.clear();
 	}
 
-	void* allocate(size_t size) override;
-	void deallocate(void* ptr) override;
+	void* allocate(size_t size);
+	void deallocate(void* ptr);
 	std::string visualizeMemory() override;
 	void setCurrentPID(int pid) { currentPID = pid; }
 
@@ -45,4 +45,22 @@ private:
 	void allocateAt(size_t index, size_t size);
 	void deallocateAt(size_t index);
 
+};
+
+class PagingAllocator : public IMemoryAllocator {
+public:
+	PagingAllocator(size_t maxMemorySize);
+
+	void* allocate(std::shared_ptr<Process> process) override;
+	void deallocate(std::shared_ptr<Process> process) override;
+	std::string visualizeMemory() override;
+
+private:
+	size_t maxMemorySize;
+	size_t numFrames;
+	std::unordered_map<size_t, size_t> frameMap; 
+	std::vector<size_t> freeFrameList;
+
+	size_t allocateFrames(size_t numFrames, size_t processID);
+	void deallocateFrames(size_t numFrames, size_t frameIndex);
 };

@@ -35,10 +35,13 @@ public:
 	size_t		getMemoryRequired() const;
 	TablePtr    getSymbolTable();
 	
-	void        setAllocationIndex(void* i) { allocIndex = i; }
-	void*       getAllocationIndex() { return allocIndex; }
+	//void        setAllocationIndex(void* i) { allocIndex = i; }
+	//void*       getAllocationIndex() { return allocIndex; }
 	void        setAllocation(bool a) { allocated = a; }
 	bool		isAllocated() { return allocated; }
+
+	void        setNumPages(size_t n) { numPages = n; }
+	size_t      getNumPages() const { return numPages; }
 
 	void setState(State newState);
 	void setStartTime(TimePoint startTime);
@@ -89,6 +92,7 @@ private:
 
 	// Memory Allocation 
 	size_t	memoryRequired;
-	void*	allocIndex;
+	//void*	allocIndex;
 	bool	allocated;
+	size_t  numPages;
 };

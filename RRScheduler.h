@@ -4,8 +4,8 @@
 
 class RRScheduler : public Scheduler {
 public:
-    RRScheduler(int cores, int quantum, IMemoryAllocator& allocator, size_t memPerProc)
-        : Scheduler(cores, allocator), quantumCycles(quantum), memPerProc(memPerProc) {
+    RRScheduler(int cores, int quantum, IMemoryAllocator& allocator)
+        : Scheduler(cores, allocator), quantumCycles(quantum) {
     }
 
     void addProcess(std::shared_ptr<Process> process) override;
@@ -16,5 +16,5 @@ public:
 
 private:
     int quantumCycles;
-    size_t memPerProc;
+    //size_t memPerProc;
 };

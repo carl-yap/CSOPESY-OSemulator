@@ -105,10 +105,11 @@ void Scheduler::schedulerStart() {
     for (int i = 0; i < numCores * 0; ++i) {
         int pid = globalProcessCounter.fetch_add(1); // fetch next global number
         std::string processName = "p" + std::to_string(pid);
+        size_t requiredMem = minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
 
-        std::shared_ptr<Process> p = std::make_shared<Process>(pid, processName, minIns, maxIns, memPerProc);
+        std::shared_ptr<Process> p = std::make_shared<Process>(pid, processName, minIns, maxIns, requiredMem);
         p->setState(Process::State::READY);
-        addProcess(p);
+		p->setNumPages(requiredMem / this->memPerFrame); 
     }
 
     // Start batch process generation thread
@@ -127,10 +128,13 @@ void Scheduler::schedulerStart() {
             int pid = globalProcessCounter.fetch_add(1); // continue where preload left off
             std::string processName = "p" + std::to_string(pid);
 
+			size_t requiredMem = minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
+
             std::shared_ptr<Process> p = std::make_shared<Process>(
-				pid, processName, minIns, maxIns, memPerProc
+				pid, processName, minIns, maxIns, requiredMem
             );
             p->setState(Process::State::READY);
+			p->setNumPages(requiredMem / this->memPerFrame); 
 
             if (processList.size() <= static_cast<size_t>(pid))
                 processList.resize(pid + 1);

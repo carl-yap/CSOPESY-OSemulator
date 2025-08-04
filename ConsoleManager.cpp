@@ -34,31 +34,30 @@ bool ConsoleManager::isRunning() {
 }
 
 // Open a new or existing process screen
-void ConsoleManager::openScreen(const std::string& name, bool resume) {
+void ConsoleManager::openScreen(const std::string& name) {
     // Check if the screen name exists in our consoles map
     auto it = consoles.find(name);
     
-    if (resume) {
-        if (it != consoles.end()) {
-            clearScreen();
-            currentConsole = it->second; // Screen exists and we want to resume it
-        } else {
-            std::cerr << "Process '" << name << "' does not exist." << std::endl;
-		}
-    }
-    else {
-        if (it != consoles.end()) {
-            std::cerr << "Process '" << name << "' already exists. Use resume to continue." << std::endl;
-        } else {
-			clearScreen();
-            // Screen doesn't exist, start a new one
-            auto newProcessConsole = std::make_shared<ProcessConsole>(name);
+    if (it != consoles.end()) {
+        clearScreen();
+        currentConsole = it->second; // Screen exists and we want to resume it
+    } else {
+        std::cerr << "Process '" << name << "' does not exist." << std::endl;
+	}
+}
 
-            consoles[name] = newProcessConsole;
-
-            currentConsole = newProcessConsole;
-		}
+void ConsoleManager::startScreen(const std::string& name, size_t memorySize) {
+    // Check if the screen name exists in our consoles map
+    auto it = consoles.find(name);
+    
+    if (it != consoles.end()) {
+        std::cerr << "Process '" << name << "' already exists. Use resume to continue." << std::endl;
+        return;
     }
+    // Screen doesn't exist, start a new one
+    auto newProcessConsole = std::make_shared<ProcessConsole>(name, memorySize);
+    consoles[name] = newProcessConsole;
+    currentConsole = newProcessConsole;
 }
 
 void ConsoleManager::customScreen(const std::string& name, const std::vector<std::vector<std::string>> commands) {

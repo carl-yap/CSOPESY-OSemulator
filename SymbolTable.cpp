@@ -6,7 +6,7 @@ SymbolTable::SymbolTable() {
 }
 
 bool SymbolTable::insert(uintptr_t address, const std::string& name, uint16_t value) {
-	if (table.size() >= 16) {
+	if (table.size() >= 32) {
 		return false;
 	}
 	if (table.find(address) != table.end()) {
