@@ -1,6 +1,6 @@
 # CSOPESY_OSemulator
 
-A lightweight operating system emulator written in modern C++20, demonstrating core OS concepts including process scheduling, I/O handling, and immediate-mode console UI.
+A lightweight operating system emulator written in modern C++20, demonstrating core OS concepts including process scheduling, I/O handling, and immediate-mode console UI. Additionally, it can perform demand paging allocation.
 
 created by Group 2: BACOSA, Gabriel | MANIPOL, Marion | TAN, Edward | YAP, Carl
 
@@ -37,8 +37,11 @@ After successful compilation, execute the emulator with:
 | MainConsole.cpp     | Main menu display & command interpret|
 | ProcessConsole.cpp  | Process info & screen-smi            |
 | MarqueeConsole.cpp	| Immediate-mode text display          |
+| MemoryAllocator.h 	| Implementation of Flat & Pagin       |
+| DemandPagingAlloc..	| Immediate-mode text display          |
+| SymbolTable.cpp	    | Management of variables in a process |
+| Commands.cpp       	| Simulation of subroutines (READ, WRITE, etc.)    |
 
 ## Future Work
 
 - Create a `.bat` file to open the emulator with one step
-- Memory Management (MO2)
