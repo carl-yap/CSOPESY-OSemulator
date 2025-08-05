@@ -161,6 +161,7 @@ void MainConsole::handleInitialize() {
     std::cout << "initialize command recognized. Doing something." << std::endl;
 }
 
+
 void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
     String name = "empty";
     bool resume = false;
@@ -186,18 +187,25 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
         ConsoleManager::getInstance().openScreen(name);
         return;
     case 4:
-        if (commandTokens[1] == "-c") {
-            name = commandTokens[2];
-            std::vector<std::vector<String>> commands = tokenizeCustomCommands(commandTokens[3]);
-            for (const auto& cmd : commands) {
-                if (cmd.empty()) continue; // Skip empty commands
-                std::string cmdStr = cmd[0];
-                for (size_t i = 1; i < cmd.size(); ++i) {
-                    cmdStr += " " + cmd[i];
+        if (commandTokens[1] == "-s") {
+            name = commandTokens[2]; // Use provided name instead of "empty"
+            size_t requiredMem = 0;
+            try {
+                requiredMem = std::stoull(commandTokens[3]);
+                if (!ProcessScheduler::getInstance().isValidMemorySize(requiredMem)) {
+                    std::cout << "Memory size out of range. Please enter a smaller number." << std::endl;
+                    return;
                 }
-                // std::cout << "Found command: " << cmdStr << std::endl;
+                if (ProcessScheduler::getInstance().processExists(name)) {
+                    std::cout << "Process '" << name << "' already exists. Use screen -r " << name << " to view it." << std::endl;
+                    return;
+                }
+                ConsoleManager::getInstance().startScreen(name, requiredMem);
             }
-            ConsoleManager::getInstance().customScreen(name, commands);
+            catch (const std::exception& e) {
+                std::cerr << "Invalid memory size: " << e.what() << std::endl;
+                return;
+            }
         }
         else if (commandTokens[1] == "-s") {
             size_t requiredMem = 0;  

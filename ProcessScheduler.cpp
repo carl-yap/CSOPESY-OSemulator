@@ -100,6 +100,16 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
     return nullptr;
 }
 
+bool ProcessScheduler::processExists(const std::string& name) const {
+    if (!scheduler) return false;
+    for (const auto& proc : scheduler->processList) {
+        if (proc && proc->getName() == name) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
     std::ifstream config("config.txt");
     if (!config) {

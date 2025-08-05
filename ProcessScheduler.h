@@ -41,6 +41,8 @@ public:
 
 	void showVMStat() const;
 
+	bool processExists(const std::string& name) const;
+
 private:
 	ProcessScheduler() {};
 	std::shared_ptr<Scheduler> scheduler = nullptr;
