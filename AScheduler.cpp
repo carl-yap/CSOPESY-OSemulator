@@ -129,7 +129,7 @@ void Scheduler::schedulerStart() {
             std::string processName = "p" + std::to_string(pid);
 
 			size_t requiredMem = minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
-			size_t numPages = requiredMem / this->memPerFrame;
+            size_t numPages = std::max(size_t{ 1 }, requiredMem / this->memPerFrame);
 
             std::shared_ptr<Process> p = std::make_shared<Process>(
 				pid, processName, minIns, maxIns, requiredMem, numPages

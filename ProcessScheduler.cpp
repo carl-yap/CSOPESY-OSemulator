@@ -298,6 +298,6 @@ void ProcessScheduler::showVMStat() const {
     std::cout << std::endl;
 
     // Memory visualization
-    std::cout << "Memory visualization:" << std::endl;
-    std::cout << demandPagingAllocator->visualizeMemory() << std::endl;
+    /*std::cout << "Memory visualization:" << std::endl;
+    std::cout << demandPagingAllocator->visualizeMemory() << std::endl;*/
 }
