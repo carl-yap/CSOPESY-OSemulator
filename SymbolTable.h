@@ -26,4 +26,5 @@ public:
 	uintptr_t generateAddress();
 	bool isValidAddress(uintptr_t address) const;
 	void print() const;
+	void clear() { table.clear(); }
 };

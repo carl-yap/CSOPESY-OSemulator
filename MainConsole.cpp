@@ -224,6 +224,19 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
 				ConsoleManager::getInstance().startScreen(name, requiredMem);
                 return;
             }
+        } 
+        else if (commandTokens[1] == "-c") {
+            name = commandTokens[2];
+            std::vector<std::vector<String>> commands = tokenizeCustomCommands(commandTokens[3]);
+            for (const auto& cmd : commands) {
+                if (cmd.empty()) continue; // Skip empty commands
+                std::string cmdStr = cmd[0];
+                for (size_t i = 1; i < cmd.size(); ++i) {
+                    cmdStr += " " + cmd[i];
+                }
+                // std::cout << "Found command: " << cmdStr << std::endl;
+            }
+            ConsoleManager::getInstance().customScreen(name, commands);
         }
         return;
     default:

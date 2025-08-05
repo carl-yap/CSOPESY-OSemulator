@@ -101,8 +101,8 @@ void RRScheduler::cpuCoreThread(int coreID) {
                 demandPagingAlloc->accessPage(proc->getPID(), pageToAccess, isWrite);
             }
 
-            proc->executeCurrentCommand();
-            proc->addLog(coreID, "Hello world from " + proc->getName());
+            proc->executeCurrentCommand(coreID);
+            //proc->addLog(coreID, "Hello world from " + proc->getName());
             proc->moveToNextLine();
             instructionsExecuted++;
 

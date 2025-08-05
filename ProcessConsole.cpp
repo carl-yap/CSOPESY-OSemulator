@@ -7,10 +7,7 @@ ProcessConsole::ProcessConsole(const String pName) : Console("PROCESS_CONSOLE") 
 
 ProcessConsole::ProcessConsole(const String pName, size_t memSize) : Console("PROCESS_CONSOLE") {
 	this->p = ProcessScheduler::getInstance().fetchProcessByName(pName, memSize);
-	if (!p) {
-		std::cerr << "Error: Process '" << pName << "' not found." << std::endl;
-		return;
-	}
+	ProcessScheduler::getInstance().addProcess(p);
 }
 
 void ProcessConsole::onEnabled() { /* no-op */ }
@@ -133,5 +130,6 @@ void ProcessConsole::setCustomCommands(const std::vector<std::vector<std::string
 		}
 	}
 	p->setCustomInstructions(commandList);
+	ProcessScheduler::getInstance().addProcess(p);
 	this->custom = true;
 }

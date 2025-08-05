@@ -91,16 +91,13 @@ void FCFSScheduler::cpuCoreThread(int coreID) {
 
         lock.unlock(); // Unlock before processing to allow other cores to run
 
-        // Execute process until completion (FCFS doesn't preempt)
-        int instructionsExecuted = 0;
-        while (!proc->isFinished()) {
-            // Simulate page accesses during instruction execution
-            simulatePageAccess(proc, coreID);
-
-            proc->executeCurrentCommand();
-            proc->addLog(coreID, "Hello world from " + proc->getName());
-            proc->moveToNextLine();
-            instructionsExecuted++;
+		// Execute process until completion 
+		int instructionsExecuted = 0;
+		while (!proc->isFinished()) {
+			proc->executeCurrentCommand(coreID);
+			//proc->addLog(coreID, "Hello world from " + proc->getName());
+			proc->moveToNextLine();
+			instructionsExecuted++;
 
             if (delayPerExec > 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));

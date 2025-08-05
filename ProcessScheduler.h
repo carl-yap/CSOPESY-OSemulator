@@ -21,7 +21,8 @@ public:
     void stop();
     void exit(); // cleanup resources & threads
 
-    std::shared_ptr<Process> fetchProcessByName(const std::string& name, size_t memSize);
+	void addProcess(std::shared_ptr<Process> p);
+	std::shared_ptr<Process> fetchProcessByName(const std::string& name, size_t memSize);
 
     void setNumCPU(int n) { numCPU = n; }
     void setSchedulerType(const std::string& s) { type = s; }

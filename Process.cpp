@@ -5,7 +5,8 @@ Process::Process(int id, const std::string& name, int minIns, int maxIns, size_t
 	: pid(id), name(name), state(State::NEW), programCounter(0), memoryRequired(memoryRequired), numPages(numPages)
 {
 	getSymbolTable(); 
-	generateInstructionsBetween(minIns, maxIns);
+	instructions = CommandList();
+	if (memoryRequired > 0) generateInstructionsBetween(minIns, maxIns);
 	arrivalTime = std::chrono::system_clock::now();
 	
 	allocated = false; // Initially not allocated
@@ -45,10 +46,17 @@ void Process::generateInstructionsBetween(int min, int max) {
 				break;
 		}
 	}
+	setState(State::READY);
 }
 
 void Process::setCustomInstructions(CommandList cmds) {
-	this->instructions = std::move(cmds);
+    this->instructions = std::move(cmds);
+    this->programCounter = 0; // Reset 
+
+	this->memoryRequired = 2;
+	this->numPages = 2;
+
+	setState(State::READY);
 }
 
 /*============== GETTERS ================*/
@@ -112,14 +120,15 @@ void Process::setStartTime(TimePoint startTime) {
 	this->startTime = startTime;
 }
 
-/*============== SUBROUTINES ================*/
-void Process::executeCurrentCommand() const {
-	std::shared_ptr<ICommand> currentCommand = this->instructions[this->programCounter];
+void Process::executeCurrentCommand(int core) const {  
+    std::shared_ptr<ICommand> currentCommand = this->instructions[this->programCounter];  
 
-	currentCommand->execute();
-	if (currentCommand->getCommandType() == ICommand::PRINT) {
-		std::cout << currentCommand->getOutput() << std::endl;
-	}
+    currentCommand->execute();  
+    if (currentCommand->getCommandType() == ICommand::PRINT) {  
+        std::cout << currentCommand->getOutput() << std::endl;  
+    }  
+
+    const_cast<Process*>(this)->addLog(core, currentCommand->getOutput());  
 }
 
 void Process::moveToNextLine() {

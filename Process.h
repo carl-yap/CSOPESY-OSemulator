@@ -47,7 +47,7 @@ public:
 	void setStartTime(TimePoint startTime);
 	void setEndTime(TimePoint endTime);
 
-	void executeCurrentCommand() const;
+	void executeCurrentCommand(int core) const;
 	void moveToNextLine();
 
 	// Get the remaining number of instructions 

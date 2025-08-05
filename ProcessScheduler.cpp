@@ -77,6 +77,12 @@ void ProcessScheduler::makeReportUtil() const {
     }
 }
 
+void ProcessScheduler::addProcess(std::shared_ptr<Process> p) {
+    if (scheduler) {
+        scheduler->addProcess(p);
+    }
+}
+
 std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string& name, size_t memSize) {
     bool procExists = false;
 
@@ -90,14 +96,13 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
         if (!procExists) {
             // Process does not exist, create a new one
             int id = static_cast<int>(scheduler->processList.size()) + 1;
-            size_t requiredMem = memSize > 0 ? memSize : minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
-            size_t numPages = requiredMem / this->memPerFrame;
-            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, requiredMem, numPages);
+			//size_t requiredMem = memSize > 0 ? memSize : minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
+			size_t numPages = memSize / this->memPerFrame;
+            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, memSize, numPages);
             p->setState(Process::State::READY);
             // Set startTime to now for new process
             p->setStartTime(std::chrono::system_clock::now());
             scheduler->processList.push_back(p); // Add to list of procs
-            scheduler->addProcess(p); // send to RQ
             return p;
         }
     }
