@@ -210,7 +210,8 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
         else if (commandTokens[1] == "-s") {
             size_t requiredMem = 0;  
             try {  
-                requiredMem = std::stoull(commandTokens[3]);  
+                name = commandTokens[2];
+                requiredMem = std::stoull(commandTokens[3]);
             } catch (const std::exception& e) {  
                 std::cerr << "Exception caught: " << e.what() << std::endl;  
                 return;  

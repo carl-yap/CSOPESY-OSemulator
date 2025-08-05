@@ -127,6 +127,7 @@
     <ClCompile Include="AScheduler.cpp" />
     <ClCompile Include="Commands.cpp" />
     <ClCompile Include="ConsoleManager.cpp" />
+    <ClCompile Include="DemandPagingAllocator.cpp" />
     <ClCompile Include="FCFSScheduler.cpp" />
     <ClCompile Include="FlatMemoryAllocator.cpp" />
     <ClCompile Include="MainConsole.cpp" />

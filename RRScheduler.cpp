@@ -2,26 +2,26 @@
 
 void RRScheduler::addProcess(std::shared_ptr<Process> process) {
     if (!running.load()) {
-        std::cout << "[addProcess] Rejected " << process->getName() << " (scheduler is stopped)\n";
-        return;
+        return;  // Removed debug output
     }
 
+    // Store process in processList for screen -ls functionality
     if (processList.size() <= static_cast<size_t>(process->getPID()))
         processList.resize(process->getPID() + 1);
     processList[process->getPID()] = process;
 
-    // SET PID before allocating
-    static_cast<PagingAllocator&>(memoryAllocator);
-    void* memPtr = memoryAllocator.allocate(process); 
+    // Try to allocate memory using the memory allocator
+    void* memPtr = memoryAllocator.allocate(process);
 
     if (!memPtr) {
         std::lock_guard<std::mutex> lock(queueMutex);
-        readyQueue.push(process); // memory full → retry later
+        readyQueue.push(process); // memory allocation failed → retry later
         return;
     }
-    else { // mark process as allocated 
-        process->setAllocation(true); 
-    } 
+    else {
+        // Mark process as allocated 
+        process->setAllocation(true);
+    }
 
     std::lock_guard<std::mutex> lock(queueMutex);
     readyQueue.push(process);
@@ -44,18 +44,17 @@ void RRScheduler::schedulerThread() {
             if (!coreBusy[core].get()->load()) { // if the core is not busy
                 std::shared_ptr<Process> proc = readyQueue.front();
                 readyQueue.pop();
-                
-                if (!proc->isAllocated()) { 
-					// Attempt to allocate memory for the process
-                    static_cast<PagingAllocator&>(memoryAllocator);
+
+                if (!proc->isAllocated()) {
+                    // Attempt to allocate memory for the process
                     void* memPtr = memoryAllocator.allocate(proc);
 
-					if (!memPtr) { // still no memory available
+                    if (!memPtr) { // still no memory available
                         readyQueue.push(proc); // retry later
                         continue;
                     }
-                    else { // it found a block open
-						proc->setAllocation(true); 
+                    else {
+                        proc->setAllocation(true);
                     }
                 }
 
@@ -94,18 +93,19 @@ void RRScheduler::cpuCoreThread(int coreID) {
         // Execute process for quantum
         int instructionsExecuted = 0;
         while (instructionsExecuted < quantumCycles && !proc->isFinished()) {
+            // Simulate page accesses during instruction execution
+            DemandPagingAllocator* demandPagingAlloc = dynamic_cast<DemandPagingAllocator*>(&memoryAllocator);
+            if (demandPagingAlloc && proc->getNumPages() > 0) {
+                size_t pageToAccess = rand() % proc->getNumPages();
+                bool isWrite = (rand() % 4 == 0); // 25% chance of write operation
+                demandPagingAlloc->accessPage(proc->getPID(), pageToAccess, isWrite);
+            }
+
             proc->executeCurrentCommand();
-            // After proc->executeCurrentCommand();
             proc->addLog(coreID, "Hello world from " + proc->getName());
             proc->moveToNextLine();
             instructionsExecuted++;
-            if (instructionsExecuted == quantumCycles) {
-                std::string snapshot = memoryAllocator.visualizeMemory();
-                int cycle = static_cast<int>(tickCount) / quantumCycles;
-                std::ofstream ofs("mem_snapshots/memory_stamp_" + std::to_string(cycle) + ".txt");
-                if (ofs) ofs << snapshot;
-                ofs.close();
-            }
+
             if (delayPerExec > 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
             }
@@ -116,10 +116,9 @@ void RRScheduler::cpuCoreThread(int coreID) {
         if (proc->isFinished()) {
             proc->setState(Process::State::TERMINATED);
             proc->setEndTime(std::chrono::system_clock::now());
-            
-			// Deallocate memory for the process
-            static_cast<PagingAllocator&>(memoryAllocator).deallocate(proc);
-			//proc->setAllocationIndex(nullptr);
+
+            // Deallocate memory for the process
+            memoryAllocator.deallocate(proc);
             proc->setAllocation(false);
 
             // Ensure process is properly tracked
