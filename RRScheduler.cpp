@@ -1,15 +1,27 @@
-#include "RRScheduler.h"
+﻿#include "RRScheduler.h"
 
 void RRScheduler::addProcess(std::shared_ptr<Process> process) {
     if (!running.load()) {
-        std::cout << "[addProcess] Rejected " << process->getName() << " (scheduler is stopped)\n";
-        return;
+        return;  // Removed debug output
     }
 
-    // Store process in processList for screen -ls functionality (same as FCFS)
+    // Store process in processList for screen -ls functionality
     if (processList.size() <= static_cast<size_t>(process->getPID()))
         processList.resize(process->getPID() + 1);
     processList[process->getPID()] = process;
+
+    // Try to allocate memory using the memory allocator
+    void* memPtr = memoryAllocator.allocate(process);
+
+    if (!memPtr) {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        readyQueue.push(process); // memory allocation failed → retry later
+        return;
+    }
+    else {
+        // Mark process as allocated 
+        process->setAllocation(true);
+    }
 
     std::lock_guard<std::mutex> lock(queueMutex);
     readyQueue.push(process);
@@ -32,6 +44,19 @@ void RRScheduler::schedulerThread() {
             if (!coreBusy[core].get()->load()) { // if the core is not busy
                 std::shared_ptr<Process> proc = readyQueue.front();
                 readyQueue.pop();
+
+                if (!proc->isAllocated()) {
+                    // Attempt to allocate memory for the process
+                    void* memPtr = memoryAllocator.allocate(proc);
+
+                    if (!memPtr) { // still no memory available
+                        readyQueue.push(proc); // retry later
+                        continue;
+                    }
+                    else {
+                        proc->setAllocation(true);
+                    }
+                }
 
                 {
                     std::lock_guard<std::mutex> core_lock(coreMutexes[core]);
@@ -68,11 +93,19 @@ void RRScheduler::cpuCoreThread(int coreID) {
         // Execute process for quantum
         int instructionsExecuted = 0;
         while (instructionsExecuted < quantumCycles && !proc->isFinished()) {
-            proc->executeCurrentCommand();
-            // After proc->executeCurrentCommand();
-            proc->addLog(coreID, "Hello world from " + proc->getName());
+            // Simulate page accesses during instruction execution
+            DemandPagingAllocator* demandPagingAlloc = dynamic_cast<DemandPagingAllocator*>(&memoryAllocator);
+            if (demandPagingAlloc && proc->getNumPages() > 0) {
+                size_t pageToAccess = rand() % proc->getNumPages();
+                bool isWrite = (rand() % 4 == 0); // 25% chance of write operation
+                demandPagingAlloc->accessPage(proc->getPID(), pageToAccess, isWrite);
+            }
+
+            proc->executeCurrentCommand(coreID);
+            //proc->addLog(coreID, "Hello world from " + proc->getName());
             proc->moveToNextLine();
             instructionsExecuted++;
+
             if (delayPerExec > 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(delayPerExec));
             }
@@ -83,6 +116,10 @@ void RRScheduler::cpuCoreThread(int coreID) {
         if (proc->isFinished()) {
             proc->setState(Process::State::TERMINATED);
             proc->setEndTime(std::chrono::system_clock::now());
+
+            // Deallocate memory for the process
+            memoryAllocator.deallocate(proc);
+            proc->setAllocation(false);
 
             // Ensure process is properly tracked
             if (processList.size() <= static_cast<size_t>(proc->getPID())) {

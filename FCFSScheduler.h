@@ -4,9 +4,15 @@
 
 class FCFSScheduler : public Scheduler {
 public:
-	FCFSScheduler(int cores) : Scheduler(cores) {}
+    FCFSScheduler(int cores, IMemoryAllocator& allocator, int quantumCycles = 4)
+        : Scheduler(cores, allocator) {
+    }
 
-	void addProcess(std::shared_ptr<Process> process) override;
-	void schedulerThread() override;
-	void cpuCoreThread(int coreID) override;
+    void addProcess(std::shared_ptr<Process> process) override;
+    void schedulerThread() override;
+    void cpuCoreThread(int coreID) override;
+
+private:
+    // Helper method to simulate page accesses during process execution
+    void simulatePageAccess(std::shared_ptr<Process> process, int coreID);
 };

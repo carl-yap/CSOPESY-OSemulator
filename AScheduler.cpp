@@ -97,18 +97,19 @@ void Scheduler::schedulerStart() {
     startTickThread();
 
     // Start scheduler and cores
-    // std::thread(&Scheduler::schedulerThread, this).detach();
-    for (int i = 0; i < numCores; ++i)
-        std::thread(&Scheduler::cpuCoreThread, this, i).detach();
+    //std::thread(&Scheduler::schedulerThread, this).detach();
+    //for (int i = 0; i < numCores; ++i)
+    //    std::thread(&Scheduler::cpuCoreThread, this, i).detach();
 
     // Preload initial processes immediately (use unique ID range)
     for (int i = 0; i < numCores * 0; ++i) {
         int pid = globalProcessCounter.fetch_add(1); // fetch next global number
         std::string processName = "p" + std::to_string(pid);
+        size_t requiredMem = minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
+		size_t numPages = requiredMem / this->memPerFrame;
 
-        std::shared_ptr<Process> p = std::make_shared<Process>(pid, processName, minIns, maxIns);
+        std::shared_ptr<Process> p = std::make_shared<Process>(pid, processName, minIns, maxIns, requiredMem, numPages);
         p->setState(Process::State::READY);
-        addProcess(p);
     }
 
     // Start batch process generation thread
@@ -127,10 +128,14 @@ void Scheduler::schedulerStart() {
             int pid = globalProcessCounter.fetch_add(1); // continue where preload left off
             std::string processName = "p" + std::to_string(pid);
 
+			size_t requiredMem = minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
+            size_t numPages = std::max(size_t{ 1 }, requiredMem / this->memPerFrame);
+
             std::shared_ptr<Process> p = std::make_shared<Process>(
-                pid, processName, minIns, maxIns
+				pid, processName, minIns, maxIns, requiredMem, numPages
             );
             p->setState(Process::State::READY);
+			//p->setNumPages(requiredMem / this->memPerFrame); 
 
             if (processList.size() <= static_cast<size_t>(pid))
                 processList.resize(pid + 1);
@@ -168,4 +173,43 @@ void Scheduler::startTickThread() {
             tickCount++;
         }
         }).detach();
+}
+
+void Scheduler::cleanUp() {
+    // Stop the tick thread and scheduler
+    running.store(false);
+    tickThreadRunning.store(false);
+
+    // Notify all waiting threads to wake up and exit
+    cvScheduler.notify_all();
+    for (auto& cv : cvCores) {
+        cv.notify_all();
+    }
+
+    // Clear the ready queue
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        while (!readyQueue.empty()) {
+            readyQueue.pop();
+        }
+    }
+
+    // Clear current processes and mark all cores as not busy
+    for (int i = 0; i < numCores; ++i) {
+        if (i < static_cast<int>(currentProcess.size())) {
+            currentProcess[i] = nullptr;
+        }
+        if (i < static_cast<int>(coreBusy.size()) && coreBusy[i]) {
+            coreBusy[i]->store(false);
+        }
+    }
+
+    // Clear finished processes
+    {
+        std::lock_guard<std::mutex> lock(finishedMutex);
+        finishedProcesses.clear();
+    }
+
+    // Clear process list
+    processList.clear();
 }

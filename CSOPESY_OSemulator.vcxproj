@@ -127,11 +127,14 @@
     <ClCompile Include="AScheduler.cpp" />
     <ClCompile Include="Commands.cpp" />
     <ClCompile Include="ConsoleManager.cpp" />
+    <ClCompile Include="DemandPagingAllocator.cpp" />
     <ClCompile Include="FCFSScheduler.cpp" />
+    <ClCompile Include="FlatMemoryAllocator.cpp" />
     <ClCompile Include="MainConsole.cpp" />
     <ClCompile Include="MainLoop.cpp" />
     <ClCompile Include="MarqueeConsole.cpp" />
     <ClCompile Include="MarqueeWorkerThread.cpp" />
+    <ClCompile Include="PagingAllocator.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="ProcessConsole.cpp" />
     <ClCompile Include="ProcessScheduler.cpp" />
@@ -146,6 +149,7 @@
     <ClInclude Include="MainConsole.h" />
     <ClInclude Include="MarqueeConsole.h" />
     <ClInclude Include="MarqueeWorkerThread.h" />
+    <ClInclude Include="MemoryAllocator.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="ProcessConsole.h" />
     <ClInclude Include="AScheduler.h" />

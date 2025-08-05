@@ -5,16 +5,26 @@
 #include <iostream>
 
 class SymbolTable {
+
+struct Symbol {
+	std::string name;
+	uint16_t value;
+};
+
 private:
-	SymbolTable();
-	std::unordered_map<std::string, uint16_t> table;
+	std::unordered_map<uintptr_t, Symbol> table;
 
 public:
-	static SymbolTable& getInstance();
-	void init(); // create empty table
+	SymbolTable();
 
-	bool insert(const std::string& name, uint16_t value);
-	bool update(const std::string& name, uint16_t value);
+	bool insert(uintptr_t address, const std::string& name, uint16_t value);
+	bool update(uintptr_t address, uint16_t value);
+	bool update(const std::string& name, uint16_t value);	
+	uint16_t get(uintptr_t address);
 	uint16_t get(const std::string& name);
+	
+	uintptr_t generateAddress();
+	bool isValidAddress(uintptr_t address) const;
 	void print() const;
+	void clear() { table.clear(); }
 };

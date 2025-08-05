@@ -27,7 +27,9 @@ void MainConsole::process() {
 
         if (lowerCommand == "exit") {
             std::cout << "exit command recognized. Exiting application." << std::endl;
+            // Cleanup
             ConsoleManager::getInstance().setRunStatus(false);
+            ProcessScheduler::getInstance().exit();
             return;
         }
         else if (lowerCommand == "clear") {
@@ -55,8 +57,11 @@ void MainConsole::process() {
         else if (lowerCommand == "process-smi") {
             ProcessScheduler::getInstance().showProcessList();
         }
+        else if (lowerCommand == "vmstat") {
+            ProcessScheduler::getInstance().showVMStat();
+        }
         else {
-            std::cout << "Unknown command. Available commands: initialize, marquee, screen, scheduler-test, scheduler-stop, report-util, clear, exit" << std::endl;
+            std::cout << "Unknown command. Available commands: initialize, marquee, screen, scheduler-start, scheduler-stop, report-util, process-smi, vmstat, clear, exit" << std::endl;
         }
     }
     ConsoleManager::getInstance().clearScreen();
@@ -71,15 +76,94 @@ Console::String MainConsole::toLower(const String& str) {
 }
 
 std::vector<std::string> MainConsole::tokenizeString(const String& input) {
-    std::istringstream stream(input);
-    return {std::istream_iterator<String>(stream), std::istream_iterator<String>()};
+    std::vector<std::string> tokens;
+    std::string token;
+    bool inQuotes = false;
+    bool escapeNext = false;
+
+    for (size_t i = 0; i < input.size(); ++i) {
+        char c = input[i];
+        if (inQuotes) {
+            if (c == '"' and !escapeNext) { // end quote mark
+                inQuotes = false;
+                tokens.push_back(token);
+                token.clear();
+			}
+			else if (c == '\\' && !escapeNext) { // handle escape character
+                escapeNext = true;
+            } 
+            else {
+                token += c;
+                if (escapeNext) { escapeNext = false; }
+            }
+        } else {
+            if (std::isspace(c)) {
+                if (!token.empty()) {
+                    tokens.push_back(token);
+                    token.clear();
+                }
+			}
+			else if (c == '"') { // start quote mark
+                inQuotes = true;
+            } 
+            else 
+            {
+                token += c;
+            }
+        }
+    }
+
+	if (!token.empty()) { tokens.push_back(token); } // Residual characters after last space
+    return tokens;
+}
+
+std::vector<std::vector<std::string>> MainConsole::tokenizeCustomCommands(const String& commands) {
+    std::vector<std::vector<std::string>> result;
+    std::istringstream commandStream(commands);
+    String segment;
+
+    // Split by ';'
+    while (std::getline(commandStream, segment, ';')) {
+        std::vector<std::string> tokens;
+        String token;
+        std::istringstream tokenStream(segment);
+
+        // Tokenize by spaces and parentheses
+        char c;
+        while (tokenStream.get(c)) {
+            if (std::isspace(c) || c == '(' || c == ')') {
+                if (!token.empty()) {
+                    tokens.push_back(token);
+                    token.clear();
+                }
+                if (c == '(' || c == ')') {
+                    tokens.push_back(String(1, c));
+                }
+            } else {
+                token += c;
+            }
+        }
+        if (!token.empty()) {
+            tokens.push_back(token);
+        }
+        // Remove empty tokens
+        tokens.erase(std::remove_if(tokens.begin(), tokens.end(),
+            [](const std::string& s) { return s.empty(); }), tokens.end());
+
+        if (!tokens.empty()) {
+            result.push_back(tokens);
+        }
+    }
+    return result;
 }
 
 void MainConsole::handleInitialize() {
     std::cout << "initialize command recognized. Doing something." << std::endl;
 }
 
+
 void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
+    String name = "empty";
     bool resume = false;
 
     switch (commandTokens.size()) {
@@ -99,10 +183,64 @@ void MainConsole::handleScreen(std::vector<std::string> commandTokens) {
             break;
         }
         resume = (commandTokens[1] == "-r");
-        ConsoleManager::getInstance().openScreen(commandTokens[2], resume);
+		name = commandTokens[2];
+        ConsoleManager::getInstance().openScreen(name);
+        return;
+    case 4:
+        if (commandTokens[1] == "-s") {
+            name = commandTokens[2]; // Use provided name instead of "empty"
+            size_t requiredMem = 0;
+            try {
+                requiredMem = std::stoull(commandTokens[3]);
+                if (!ProcessScheduler::getInstance().isValidMemorySize(requiredMem)) {
+                    std::cout << "Memory size out of range. Please enter a smaller number." << std::endl;
+                    return;
+                }
+                if (ProcessScheduler::getInstance().processExists(name)) {
+                    std::cout << "Process '" << name << "' already exists. Use screen -r " << name << " to view it." << std::endl;
+                    return;
+                }
+                ConsoleManager::getInstance().startScreen(name, requiredMem);
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Invalid memory size: " << e.what() << std::endl;
+                return;
+            }
+        }
+        else if (commandTokens[1] == "-s") {
+            size_t requiredMem = 0;  
+            try {  
+                name = commandTokens[2];
+                requiredMem = std::stoull(commandTokens[3]);
+            } catch (const std::exception& e) {  
+                std::cerr << "Exception caught: " << e.what() << std::endl;  
+                return;  
+            } 
+            if (!ProcessScheduler::getInstance().isValidMemorySize(requiredMem)) {
+				std::cerr << "Memory size out of range. Please enter a smaller number." << std::endl;
+                return;
+            }
+            else {
+				ConsoleManager::getInstance().startScreen(name, requiredMem);
+                return;
+            }
+        } 
+        else if (commandTokens[1] == "-c") {
+            name = commandTokens[2];
+            std::vector<std::vector<String>> commands = tokenizeCustomCommands(commandTokens[3]);
+            for (const auto& cmd : commands) {
+                if (cmd.empty()) continue; // Skip empty commands
+                std::string cmdStr = cmd[0];
+                for (size_t i = 1; i < cmd.size(); ++i) {
+                    cmdStr += " " + cmd[i];
+                }
+                // std::cout << "Found command: " << cmdStr << std::endl;
+            }
+            ConsoleManager::getInstance().customScreen(name, commands);
+        }
         return;
     default:
-        std::cout << "Too many parameters provided. Try using screen -r <process_name> or screen -s <process_name>." << std::endl;
+        std::cout << "Too many parameters provided. The options for 'screen' are <-r|-s|-c>." << std::endl;
 		return;
     }
 }

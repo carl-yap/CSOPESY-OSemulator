@@ -19,9 +19,10 @@ public:
 
 	typedef std::vector<std::shared_ptr<ICommand>> CommandList;
 	typedef std::chrono::system_clock::time_point TimePoint;
-
-	Process(int id, const std::string& n, int minIns, int maxIns);
+	typedef std::shared_ptr<SymbolTable> TablePtr;
+	Process(int id, const std::string& n, int minIns, int maxIns, size_t memoryRequired, size_t numPages);
 	void generateInstructionsBetween(int min, int max);
+	void setCustomInstructions(CommandList cmds);
 
 	State		getState() const;
 	int			getPID() const;
@@ -31,12 +32,22 @@ public:
 	TimePoint	getStartTime() const;
 	TimePoint	getEndTime() const;
 	TimePoint	getArrivalTime() const;
+	size_t		getMemoryRequired() const;
+	TablePtr    getSymbolTable();
+	
+	//void        setAllocationIndex(void* i) { allocIndex = i; }
+	//void*       getAllocationIndex() { return allocIndex; }
+	void        setAllocation(bool a) { allocated = a; }
+	bool		isAllocated() { return allocated; }
+
+	//void        setNumPages(size_t n) { numPages = n; }
+	size_t      getNumPages() const { return numPages; }
 
 	void setState(State newState);
 	void setStartTime(TimePoint startTime);
 	void setEndTime(TimePoint endTime);
 
-	void executeCurrentCommand() const;
+	void executeCurrentCommand(int core) const;
 	void moveToNextLine();
 
 	// Get the remaining number of instructions 
@@ -63,8 +74,9 @@ private:
 	CommandList instructions;
 	int programCounter;
 
-	// Symbol table [Work in Progress]
-	// SymbolTable symbolTable;
+	// Symbol table
+	TablePtr symbolTable;
+	std::unordered_map<uintptr_t, std::string> variables;
 
 	// TODO: Stack
 	// TODO: Heap
@@ -77,4 +89,11 @@ private:
 	TimePoint endTime;
 
 	std::vector<LogEntry> logs;
+
+	// Memory Allocation 
+	size_t	memoryRequired;
+	//void*	allocIndex;
+	bool	allocated;
+	size_t  numPages;
+	std::unordered_map<void*, bool> pageTable;
 };

@@ -1,67 +1,89 @@
 #include "ProcessScheduler.h"
 
 ProcessScheduler& ProcessScheduler::getInstance() {
-	static ProcessScheduler instance;
-	return instance;
+    static ProcessScheduler instance;
+    return instance;
 }
 
 void ProcessScheduler::init() {
-	if (type == "fcfs") {
-		scheduler = std::make_shared<FCFSScheduler>(numCPU);
-	}
-	else if (type == "rr") {
-		scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles); //THIS IS EDITED
-	}
-	else {
-		throw std::runtime_error("Unknown scheduler type: " + type);
-	}
+    // Calculate number of frames based on memory and frame size
+    size_t numFrames = maxOverallMem / memPerFrame;
 
+    // Always use demand paging allocator as default
+    demandPagingAllocator = std::make_shared<DemandPagingAllocator>(
+        maxOverallMem, memPerFrame, numFrames, "backing_store.dat");
+
+    // Create scheduler with demand paging allocator
+    if (type == "fcfs") {
+        scheduler = std::make_shared<FCFSScheduler>(numCPU, *demandPagingAllocator);
+    }
+    else if (type == "rr") {
+        scheduler = std::make_shared<RRScheduler>(numCPU, quantumCycles, *demandPagingAllocator);
+    }
+    else {
+        throw std::runtime_error("Unknown scheduler type: " + type);
+    }
+
+    // copying scheduler variables
     scheduler->setBatchProcessFreq(batchProcessFreq);
     scheduler->setMinIns(minIns);
     scheduler->setMaxIns(maxIns);
     scheduler->setDelayPerExec(delayPerExec);
-	
-    // scheduler->schedulerStart();
+    scheduler->setMaxOverallMemory(static_cast<int>(maxOverallMem));
+    scheduler->setMemPerFrame(memPerFrame);
+    scheduler->setMinMemPerProc(minMemPerProc);
+    scheduler->setMaxMemPerProc(maxMemPerProc);
+
+    // Start scheduler threads
     std::thread(&Scheduler::schedulerThread, scheduler).detach();
+    for (int i = 0; i < numCPU; ++i) {
+        std::thread(&Scheduler::cpuCoreThread, scheduler, i).detach();
+    }
 }
 
 void ProcessScheduler::showProcessList() const {
     int max = 50;
     std::ostringstream out;
     for (const auto& p : scheduler->processList) {
-		if (max <= 0) break; // Limit to max processes
-		if (!p) continue; // Skip null pointers
-		out << p->getName() << " " << p->getCounter() << std::endl;
+        if (max <= 0) break; // Limit to max processes
+        if (!p) continue; // Skip null pointers
+        out << p->getName() << " " << p->getCounter() << std::endl;
         max--;
     }
     if (max <= 0) out << "... and " << scheduler->processList.size() - 50 << " more processes.";
 
     std::cout << "Process List: " << std::endl;
-	std::cout << out.str() << std::endl;
+    std::cout << out.str() << std::endl;
 }
 
 void ProcessScheduler::showScreenList() const {
-	std::cout << scheduler->displayScreenList().str();
+    std::cout << scheduler->displayScreenList().str();
 }
 
 void ProcessScheduler::makeReportUtil() const {
-	std::string filename = "csopesy_log.txt";
-	if (scheduler) {
-		std::ofstream ofs(filename);
-		if (!ofs) {
-			std::cerr << "report-util error: Failed to open " << filename << std::endl;
-			return;
-		}
-		ofs << scheduler->displayScreenList().str();
-		ofs.close();
-		std::cout << "Report successfully written to " << filename << std::endl;
+    std::string filename = "csopesy_log.txt";
+    if (scheduler) {
+        std::ofstream ofs(filename);
+        if (!ofs) {
+            std::cerr << "report-util error: Failed to open " << filename << std::endl;
+            return;
+        }
+        ofs << scheduler->displayScreenList().str();
+        ofs.close();
+        std::cout << "Report successfully written to " << filename << std::endl;
     }
     else {
-		std::cerr << "report-util warning: No scheduler initialized." << std::endl;
+        std::cerr << "report-util warning: No scheduler initialized." << std::endl;
     }
 }
 
-std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string& name) {
+void ProcessScheduler::addProcess(std::shared_ptr<Process> p) {
+    if (scheduler) {
+        scheduler->addProcess(p);
+    }
+}
+
+std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string& name, size_t memSize) {
     bool procExists = false;
 
     if (scheduler) {
@@ -73,17 +95,28 @@ std::shared_ptr<Process> ProcessScheduler::fetchProcessByName(const std::string&
         }
         if (!procExists) {
             // Process does not exist, create a new one
-            int id = scheduler->processList.size() + 1;
-            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns);
+            int id = static_cast<int>(scheduler->processList.size()) + 1;
+			//size_t requiredMem = memSize > 0 ? memSize : minMemPerProc + rand() % (maxMemPerProc - minMemPerProc + 1);
+			size_t numPages = memSize / this->memPerFrame;
+            std::shared_ptr<Process> p = std::make_shared<Process>(id, name, this->minIns, this->maxIns, memSize, numPages);
             p->setState(Process::State::READY);
             // Set startTime to now for new process
             p->setStartTime(std::chrono::system_clock::now());
             scheduler->processList.push_back(p); // Add to list of procs
-            scheduler->addProcess(p); // send to RQ
             return p;
         }
     }
     return nullptr;
+}
+
+bool ProcessScheduler::processExists(const std::string& name) const {
+    if (!scheduler) return false;
+    for (const auto& proc : scheduler->processList) {
+        if (proc && proc->getName() == name) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
@@ -116,6 +149,18 @@ void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
         else if (key == "delay-per-exec") {
             config >> delayPerExec;
         }
+        else if (key == "max-overall-mem") {
+            config >> maxOverallMem;
+        }
+        else if (key == "mem-per-frame") {
+            config >> memPerFrame;
+        }
+        else if (key == "min-mem-per-proc") {
+            config >> minMemPerProc;
+        }
+        else if (key == "max-mem-per-proc") {
+            config >> maxMemPerProc;
+        }
         else {
             std::string unknownValue;
             config >> unknownValue; // discard
@@ -131,7 +176,13 @@ void ProcessScheduler::loadConfigFromFile(const std::string& filename) {
         << "  batch-process-freq: " << batchProcessFreq << "\n"
         << "  min-ins: " << minIns << "\n"
         << "  max-ins: " << maxIns << "\n"
-        << "  delay-per-exec: " << delayPerExec << "\n";
+        << "  delay-per-exec: " << delayPerExec << "\n"
+        << "  max-overall-mem: " << maxOverallMem << "\n"
+        << "  mem-per-frame: " << memPerFrame << "\n"
+        << "  min-mem-per-proc: " << minMemPerProc << "\n"
+        << "  max-mem-per-proc: " << maxMemPerProc << "\n";
+
+    std::cout << out.str() << std::endl;
 }
 
 void ProcessScheduler::start() {
@@ -139,5 +190,114 @@ void ProcessScheduler::start() {
 }
 
 void ProcessScheduler::stop() {
-    if (scheduler) scheduler->schedulerStop();
+    if (scheduler) {
+        scheduler->schedulerStop();  // signal all threads to stop
+        // scheduler = nullptr;         // force cleanup if shared_ptr
+    }
+}
+
+void ProcessScheduler::exit() {
+    if (scheduler) scheduler->cleanUp();
+}
+
+bool ProcessScheduler::isValidMemorySize(size_t size) const {
+    return size <= maxOverallMem && size <= maxMemPerProc;
+}
+
+void ProcessScheduler::showVMStat() const {
+    if (!scheduler || !demandPagingAllocator) {
+        std::cerr << "vmstat error: No scheduler or demand paging allocator initialized." << std::endl;
+        return;
+    }
+
+    // Get memory statistics from the allocator
+    size_t totalMemory = maxOverallMem;
+    size_t usedFrames = demandPagingAllocator->getUsedFrames();
+    size_t totalFrames = demandPagingAllocator->getTotalFrames();
+    size_t freeFrames = demandPagingAllocator->getFreeFrames();
+
+    // Calculate memory in bytes
+    size_t usedMemory = usedFrames * memPerFrame;
+    size_t freeMemory = freeFrames * memPerFrame;
+
+    // Ensure no underflow
+    if (usedMemory > totalMemory) {
+        usedMemory = totalMemory;
+        freeMemory = 0;
+    }
+
+    // Count active processes
+    int activeProcesses = 0;
+    int inactiveProcesses = 0;
+
+    for (const auto& process : scheduler->processList) {
+        if (!process) continue;
+
+        if (process->getState() == Process::State::RUNNING ||
+            process->getState() == Process::State::READY ||
+            process->getState() == Process::State::WAITING) {
+            activeProcesses++;
+        }
+        else {
+            inactiveProcesses++;
+        }
+    }
+
+    // Calculate CPU tick statistics
+    uint64_t totalCpuTicks = scheduler->getTickCount() * numCPU;
+    uint64_t activeCpuTicks = 0;
+    uint64_t idleCpuTicks = 0;
+
+    // Count active CPU cores
+    int activeCores = 0;
+    const auto& coreBusyFlags = scheduler->getCoreBusy();
+    for (int i = 0; i < numCPU; ++i) {
+        if (i < static_cast<int>(coreBusyFlags.size()) &&
+            coreBusyFlags[i] &&
+            coreBusyFlags[i]->load()) {
+            activeCores++;
+        }
+    }
+
+    // Estimate active vs idle ticks (simplified calculation)
+    activeCpuTicks = scheduler->getTickCount() * activeCores;
+    idleCpuTicks = totalCpuTicks - activeCpuTicks;
+
+    // Get paging statistics
+    size_t numPageFaults = demandPagingAllocator->getNumPageFaults();
+    size_t numPagedIn = demandPagingAllocator->getNumPagedIn();
+    size_t numPagedOut = demandPagingAllocator->getNumPagedOut();
+    size_t backingStoreSize = demandPagingAllocator->getBackingStoreSize();
+
+    // Display vmstat information
+    std::cout << "=== VMSTAT ===" << std::endl;
+    std::cout << std::endl;
+
+    // Process information
+    std::cout << "Active processes: " << activeProcesses << std::endl;
+    std::cout << "Inactive processes: " << inactiveProcesses << std::endl;
+    std::cout << std::endl;
+
+    // Memory information  
+    std::cout << "Total memory: " << totalMemory << " bytes" << std::endl;
+    std::cout << "Used memory: " << usedMemory << " bytes" << std::endl;
+    std::cout << "Free memory: " << freeMemory << " bytes" << std::endl;
+    std::cout << "Memory frames used: " << usedFrames << "/" << totalFrames << std::endl;
+    std::cout << std::endl;
+
+    // Demand paging specific statistics
+    std::cout << "Pages loaded (paged in): " << numPagedIn << std::endl;
+    std::cout << "Pages evicted (paged out): " << numPagedOut << std::endl;
+    std::cout << "Pages in backing store: " << backingStoreSize << std::endl;
+    std::cout << std::endl;
+
+    // CPU tick information
+    std::cout << "Idle cpu ticks: " << idleCpuTicks << std::endl;
+    std::cout << "Active cpu ticks: " << activeCpuTicks << std::endl;
+    std::cout << "Total cpu ticks: " << totalCpuTicks << std::endl;
+    std::cout << std::endl;
+
+    // Memory visualization
+    /*std::cout << "Memory visualization:" << std::endl;
+    std::cout << demandPagingAllocator->visualizeMemory() << std::endl;*/
 }

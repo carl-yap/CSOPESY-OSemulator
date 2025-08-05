@@ -12,10 +12,12 @@
 #include <chrono>
 #include <vector>
 #include <string>
+#include <fstream>
 
 #include "Process.h"
+#include "MemoryAllocator.h"
 
-// abstract class for schedulers: FCFS, RR, SJN
+// abstract class for schedulers: FCFS, RR
 class Scheduler {
 protected:
 
@@ -26,6 +28,10 @@ protected:
 	int minIns = 10;
 	int maxIns = 20;
 	int delayPerExec = 0;
+	size_t maxOverallMemory = 100; 
+	size_t memPerFrame = 4096;
+	size_t minMemPerProc = 1024; 
+	size_t maxMemPerProc = 8192; 
 
 	inline static std::atomic_uint64_t tickCount{ 0 };         // CPU tick counter
 	inline static std::atomic_bool tickThreadRunning{ false };  // Only one tick thread
@@ -46,8 +52,11 @@ protected:
 
 	std::string getTimestamp();
 
+	// MCO2
+	IMemoryAllocator& memoryAllocator;
+
 public:
-	Scheduler(int cores) : numCores(cores) {
+	Scheduler(int cores, IMemoryAllocator& allocator) : numCores(cores), memoryAllocator(allocator) {
 		// initialize vectors based on the number of cores
 		cvCores = std::vector<std::condition_variable>(numCores);
 		coreMutexes = std::vector<std::mutex>(numCores);
@@ -69,13 +78,21 @@ public:
 	void startTickThread();
 	void schedulerStart();
 	void schedulerStop();
+	void cleanUp();
 
 	void setNumCores(int n) { numCores = n; }
 	void setBatchProcessFreq(int f) { batchProcessFreq = f; }
 	void setMinIns(int m) { minIns = m; }
 	void setMaxIns(int m) { maxIns = m; }
 	void setDelayPerExec(int d) { delayPerExec = d; }
+	void setMaxOverallMemory(int m) { maxOverallMemory = m; }
+	void setMemPerFrame(size_t m) { memPerFrame = m; }
+	void setMinMemPerProc(size_t m) { minMemPerProc = m; }
+	void setMaxMemPerProc(size_t m) { maxMemPerProc = m; }
 
 	std::vector<std::shared_ptr<Process>> processList;
+
+	uint64_t getTickCount() const { return tickCount.load(); }
+	const std::vector<std::unique_ptr<std::atomic_bool>>& getCoreBusy() const { return coreBusy; }
 };
 
